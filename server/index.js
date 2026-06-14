@@ -20,6 +20,22 @@ const DATA_DIR = join(__dirname, '..', 'data')
 const DB_PATH = process.env.STUDYFORGE_DB || join(DATA_DIR, 'studyforge.db')
 const PORT = process.env.API_PORT || 5182
 
+// Security: bind to loopback only by default so the unauthenticated progress API
+// is NOT reachable from the local network. Override (e.g. API_HOST=0.0.0.0) only
+// if you deliberately serve it on a network interface and add your own auth.
+const HOST = process.env.API_HOST || '127.0.0.1'
+
+// Security: only these browser origins may make cross-origin requests. The app
+// normally reaches the API through the Vite same-origin proxy (server-side), so
+// no wildcard CORS is needed. Configure for other setups via env (comma-sep).
+const ALLOWED_ORIGINS = (
+  process.env.STUDYFORGE_ALLOWED_ORIGINS ||
+  'http://localhost:5180,http://127.0.0.1:5180'
+)
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean)
+
 // ---- Database setup ----
 mkdirSync(DATA_DIR, { recursive: true })
 const db = new Database(DB_PATH)
@@ -58,6 +74,18 @@ const q = {
   insMeta: db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)'),
 }
 
+function isPlainObject(v) {
+  return v !== null && typeof v === 'object' && !Array.isArray(v)
+}
+
+// Coerce an untrusted value to a finite integer within bounds (defends against
+// junk/NaN/huge values in the client payload). SQL is already parameterized.
+function toInt(v, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback = 0 } = {}) {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return fallback
+  return Math.min(max, Math.max(min, Math.trunc(n)))
+}
+
 function readState() {
   const lessonsRead = {}
   for (const row of q.allLessons.all()) lessonsRead[row.key] = row.read_at
@@ -84,17 +112,43 @@ const writeState = db.transaction((state) => {
     q.insLesson.run(key, String(readAt))
   }
   for (const [cardId, c] of Object.entries(state.cards || {})) {
-    q.insCard.run(cardId, c.box ?? 1, c.due ?? '', c.seen ?? 0, c.correct ?? 0)
+    const card = isPlainObject(c) ? c : {}
+    q.insCard.run(
+      cardId,
+      toInt(card.box, { min: 1, max: 5, fallback: 1 }),
+      String(card.due ?? ''),
+      toInt(card.seen, { fallback: 0 }),
+      toInt(card.correct, { fallback: 0 }),
+    )
   }
-  if (state.streak) q.insMeta.run('streak', JSON.stringify(state.streak))
+  if (isPlainObject(state.streak)) q.insMeta.run('streak', JSON.stringify(state.streak))
 })
 
 // ---- HTTP API ----
 const app = express()
-app.use(cors())
+app.disable('x-powered-by') // don't advertise Express
+
+// Restrict CORS to known origins (no wildcard). Requests without an Origin
+// header (the Vite server-side proxy, curl) are allowed; foreign browser
+// origins are rejected so a malicious site can't read API responses.
+app.use(cors({ origin: ALLOWED_ORIGINS }))
+
+// CSRF defense: reject state-changing requests that carry a foreign Origin.
+// This closes the gap CORS alone leaves for "simple" cross-site POSTs (e.g. a
+// malicious page POSTing to /api/reset). Same-origin/no-Origin requests pass.
+app.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next()
+  const origin = req.get('origin')
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return res.status(403).json({ error: 'cross-origin request blocked' })
+  }
+  next()
+})
+
 app.use(express.json({ limit: '1mb' }))
 
-app.get('/api/health', (_req, res) => res.json({ ok: true, db: DB_PATH }))
+// Health check: do NOT leak the absolute DB path (info disclosure).
+app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
 app.get('/api/state', (_req, res) => {
   try {
@@ -106,8 +160,11 @@ app.get('/api/state', (_req, res) => {
 })
 
 app.put('/api/state', (req, res) => {
+  if (!isPlainObject(req.body)) {
+    return res.status(400).json({ error: 'body must be a JSON object' })
+  }
   try {
-    writeState(req.body || {})
+    writeState(req.body)
     res.json({ ok: true })
   } catch (err) {
     console.error('PUT /api/state failed:', err)
@@ -124,6 +181,6 @@ app.post('/api/reset', (_req, res) => {
   }
 })
 
-app.listen(PORT, () => {
-  console.log(`StudyForge API on http://localhost:${PORT}  (db: ${DB_PATH})`)
+app.listen(PORT, HOST, () => {
+  console.log(`StudyForge API on http://${HOST}:${PORT}  (db: ${DB_PATH})`)
 })
