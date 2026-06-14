@@ -5,6 +5,7 @@ import TopicPage from './pages/TopicPage.jsx'
 import LessonPage from './pages/LessonPage.jsx'
 import FlashcardsPage from './pages/FlashcardsPage.jsx'
 import { getStreak, hydrate, subscribeProgress } from './lib/progress.js'
+import { lockApp } from './auth/PasswordGate.jsx'
 
 function Header() {
   const streak = getStreak()
@@ -79,7 +80,11 @@ export default function App() {
         StudyForge · your progress stays private in this browser ·{' '}
         <Link to="/" className="hover:text-slate-300">
           home
-        </Link>
+        </Link>{' '}
+        ·{' '}
+        <button onClick={lockApp} className="hover:text-slate-300">
+          lock
+        </button>
       </footer>
     </div>
   )
