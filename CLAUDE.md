@@ -6,15 +6,17 @@ This file guides Claude Code (and other AI assistants) when working in this repo
 
 ## What this is
 
-**StudyForge** — a content-driven study app (Markdown lessons + spaced-repetition flashcards). React 18 + Vite 5 + Tailwind 3, no backend. Adding a subject means dropping a folder under `content/`; the app auto-discovers it.
+**StudyForge** — a content-driven study app (Markdown lessons + spaced-repetition flashcards). React 18 + Vite 5 + Tailwind 3 frontend, plus a tiny Express + better-sqlite3 progress API. Adding a subject means dropping a folder under `content/`; the app auto-discovers it.
 
 ## Commands
 
 ```bash
 npm install
-npm run dev        # dev server on http://localhost:5180
+npm run dev        # web (:5180) + progress API (:5182) together
+npm run dev:web    # Vite dev server only
+npm run dev:api    # progress API only
 npm run build      # production build → dist/
-npm run preview    # serve the production build
+npm start          # run the progress API
 ```
 
 No test suite or linter is configured. Verify changes by running `npm run dev` and using the UI.
@@ -38,10 +40,11 @@ Discovery is automatic (`src/content/loadContent.js` via `import.meta.glob`) —
 ## Key files
 
 - `src/content/loadContent.js` — topic/lesson/flashcard discovery and ordering.
-- `src/lib/progress.js` — Leitner spaced repetition + progress (localStorage; keep it local-only, no telemetry).
+- `src/lib/progress.js` — Leitner spaced repetition; localStorage cache + sync to the local SQLite API (`hydrate`/`save`).
+- `server/index.js` — Express + better-sqlite3 progress API (`/api/state`, `/api/reset`); DB at `data/studyforge.db` (gitignored).
 - `src/lib/encouragement.js` — the kind tutor voice in the UI.
 - `src/pages/` — Home, TopicPage, LessonPage, FlashcardsPage.
 
 ## Guardrails
 
-Don't invent facts or sources, don't write unkind copy, don't break the content contract (it silently drops content), and don't add telemetry or send user study data off-device without asking.
+Don't invent facts or sources, don't write unkind copy, don't break the content contract (it silently drops content), don't commit the SQLite DB/state files, and don't add telemetry or send user study data **off-device** (the progress API is local-only by design) without asking.

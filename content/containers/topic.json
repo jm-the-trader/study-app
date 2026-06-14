@@ -1,0 +1,8 @@
+{
+  "id": "containers",
+  "title": "Containers & Docker",
+  "emoji": "🐳",
+  "blurb": "What a container actually is (namespaces + cgroups), images and layers, writing good Dockerfiles, running and networking containers, registries, and container security.",
+  "accent": "#38bdf8",
+  "order": 5
+}

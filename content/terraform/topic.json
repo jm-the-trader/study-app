@@ -1,0 +1,8 @@
+{
+  "id": "terraform",
+  "title": "Terraform & IaC",
+  "emoji": "🏗️",
+  "blurb": "Infrastructure as Code with Terraform: the declarative model, HCL and providers, the all-important state file, the plan/apply workflow, modules for reuse, and managing environments safely.",
+  "accent": "#a78bfa",
+  "order": 7
+}

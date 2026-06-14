@@ -1,0 +1,8 @@
+{
+  "id": "git",
+  "title": "Git Branching",
+  "emoji": "🌿",
+  "blurb": "Git's true mental model and the branching techniques that matter: merge vs rebase, branching workflows, rewriting history safely, recovering with reflog, and resolving conflicts.",
+  "accent": "#f97316",
+  "order": 4
+}

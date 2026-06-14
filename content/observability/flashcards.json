@@ -1,0 +1,123 @@
+[
+  {
+    "q": "What's the difference between monitoring and observability?",
+    "a": "Monitoring watches known signals against predefined thresholds (known failure modes). Observability is the broader ability to understand a system's internal state from its outputs well enough to debug novel, unanticipated problems. Monitoring is part of observability.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "What are the three pillars of observability and what does each answer best?",
+    "a": "Metrics (is something wrong? overall trend — cheap, always-on), Logs (what exactly happened in this event? detailed context), Traces (where across services did the time/error occur?). They're most powerful when correlated.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "Why is correlation between the pillars so valuable?",
+    "a": "It lets you pivot during an incident: a metric spikes → jump to traces to localize the service/operation → jump to that operation's logs (via shared trace_id) for the exact error. Detect → localize → explain.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "What is OpenTelemetry?",
+    "a": "A vendor-neutral CNCF standard (APIs, SDKs, Collector) for telemetry across traces, metrics, and logs. Instrument once with OTel and export to any compatible backend — avoiding vendor lock-in.",
+    "tags": ["fundamentals", "tracing"]
+  },
+  {
+    "q": "What is a metric, and what do labels add?",
+    "a": "A numeric measurement over time (a time series of timestamp/value), identified by a name plus labels (key/value dimensions). Labels let you slice and aggregate one metric many ways (by service, status, route).",
+    "tags": ["metrics"]
+  },
+  {
+    "q": "Why are high-cardinality labels dangerous?",
+    "a": "Each unique label combination is a separate time series. Putting unbounded values (user IDs, request IDs, raw URLs) in labels can explode into millions of series and overwhelm the metrics store. Keep label values bounded.",
+    "hint": "Don't put user IDs in labels.",
+    "tags": ["metrics"]
+  },
+  {
+    "q": "What's the difference between a counter and a gauge?",
+    "a": "A counter only goes up (or resets to 0 on restart) — total requests/errors; you read its rate, not the raw value. A gauge goes up and down — current memory, queue depth, in-flight requests.",
+    "tags": ["metrics"]
+  },
+  {
+    "q": "What does a histogram metric enable?",
+    "a": "It buckets observations (e.g. request durations) so you can compute percentiles/quantiles (p50, p95, p99) at query time — e.g. histogram_quantile(0.99, ...). Crucial because tail latency matters more than averages.",
+    "tags": ["metrics"]
+  },
+  {
+    "q": "Why does Prometheus use a pull (scrape) model, and what's the benefit?",
+    "a": "Prometheus scrapes targets' /metrics endpoints on its schedule. Benefits: it controls timing, a failed scrape itself signals a down target, no app-side buffering, and service discovery (esp. in Kubernetes) auto-finds new pods to scrape.",
+    "tags": ["metrics", "prometheus"]
+  },
+  {
+    "q": "In PromQL, why do you graph rate(counter[5m]) instead of the counter itself?",
+    "a": "A counter's raw value is an ever-growing (and reset-prone) number that's meaningless to graph. rate(counter[5m]) gives the per-second rate over the window and correctly handles restarts. Aggregate across series with sum by (label).",
+    "tags": ["metrics", "promql"]
+  },
+  {
+    "q": "Why log structured (JSON) instead of free text?",
+    "a": "Structured logs are queryable by field (e.g. level=error AND service=payments AND retries>2) instead of brittle regex grepping. At scale this means answering questions in seconds, not hours.",
+    "tags": ["logs"]
+  },
+  {
+    "q": "Where should a containerized app send its logs, and why?",
+    "a": "To stdout/stderr — the platform (container runtime/node agent, or journald) captures and ships them. Apps shouldn't manage files/rotation; logs written to files inside a container are ephemeral and invisible to the platform.",
+    "tags": ["logs"]
+  },
+  {
+    "q": "What single field turns scattered per-service logs into one request's story?",
+    "a": "A trace/request ID on every log line. With trace_id you can fetch all logs across all services for one request — the concrete form of cross-pillar correlation. Propagating it is what tracing does.",
+    "tags": ["logs", "tracing"]
+  },
+  {
+    "q": "What's the typical log aggregation pipeline?",
+    "a": "app stdout → collector/agent (Fluent Bit, Vector, Promtail) → store + index (Loki or Elasticsearch/OpenSearch) → query/visualize (Grafana or Kibana). Needed because pod logs are ephemeral and numerous.",
+    "tags": ["logs"]
+  },
+  {
+    "q": "What does distributed tracing show that metrics and logs cannot?",
+    "a": "The end-to-end path and timing of a single request across all the services it touches — turning 'it's slow somewhere' into 'the payments→bank span took 800ms of 850ms'. It's the pillar built for distributed systems.",
+    "tags": ["tracing"]
+  },
+  {
+    "q": "What are a span and a trace?",
+    "a": "A span is one unit of work in one service (name, duration, attributes). A trace is a tree of spans for one request — a root span (entry point) with nested child spans — sharing one trace_id.",
+    "tags": ["tracing"]
+  },
+  {
+    "q": "What is context propagation and why is it critical?",
+    "a": "Passing the trace context (trace ID + parent span) across service calls, typically via the W3C traceparent header, so each service nests its span under the same trace. If a service doesn't forward it, the trace breaks into disconnected pieces.",
+    "tags": ["tracing"]
+  },
+  {
+    "q": "What does OpenTelemetry decouple, and how does the Collector help?",
+    "a": "It decouples generating telemetry from storing it — instrument once, export anywhere. The OTel Collector receives telemetry, processes it (batch/filter/redact/sample), and exports to one or more backends, centralizing routing and sampling.",
+    "tags": ["tracing"]
+  },
+  {
+    "q": "What is tail-based sampling and why is it popular?",
+    "a": "Deciding which traces to keep after they complete (in the Collector) — e.g. keep all errored/slow traces plus a sample of normal ones. It retains the traces you actually care about at manageable cost, unlike head sampling which decides blindly up front.",
+    "tags": ["tracing"]
+  },
+  {
+    "q": "What are the four golden signals?",
+    "a": "Latency (how long requests take — watch p95/p99), Traffic (demand/throughput), Errors (rate of failures), and Saturation (how full the system is). The best default starting set for any service.",
+    "tags": ["slo", "alerting"]
+  },
+  {
+    "q": "Define SLI, SLO, and error budget.",
+    "a": "SLI = a measured indicator (e.g. % of requests <300ms and successful). SLO = the target for it over a window (e.g. 99.9% over 30 days). Error budget = the allowed failure (inverse of SLO; 99.9% → 0.1% budget) — a resource you spend.",
+    "tags": ["slo"]
+  },
+  {
+    "q": "How does an error budget guide engineering decisions?",
+    "a": "Plenty of budget left → ship features faster and take risks. Budget exhausted → freeze risky changes and prioritize stability. It makes reliability a managed number and defuses dev-vs-ops debates (100% reliability is the wrong, too-costly target).",
+    "tags": ["slo"]
+  },
+  {
+    "q": "Why alert on symptoms rather than causes?",
+    "a": "Symptoms (SLO/error-budget burn rate, user-facing latency/errors) mean real user impact needing a human now. Causes like '85% CPU' are often harmless — paging on them creates alert fatigue, which leads to ignored pages and missed real incidents.",
+    "tags": ["alerting"]
+  },
+  {
+    "q": "What makes a good page (alert)?",
+    "a": "It must be actionable and urgent — something a human must do right now. If there's nothing to do or it can wait until morning, make it a ticket or dashboard, not a page. Ruthlessly delete non-actionable alerts to fight fatigue.",
+    "tags": ["alerting"]
+  }
+]

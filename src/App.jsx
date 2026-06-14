@@ -1,9 +1,10 @@
+import { useEffect, useReducer } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import Home from './pages/Home.jsx'
 import TopicPage from './pages/TopicPage.jsx'
 import LessonPage from './pages/LessonPage.jsx'
 import FlashcardsPage from './pages/FlashcardsPage.jsx'
-import { getStreak } from './lib/progress.js'
+import { getStreak, hydrate, subscribeProgress } from './lib/progress.js'
 
 function Header() {
   const streak = getStreak()
@@ -52,6 +53,15 @@ function Header() {
 }
 
 export default function App() {
+  // Re-render the whole tree whenever progress changes (incl. async hydrate),
+  // since pages read the synchronous progress cache during render.
+  const [, forceRender] = useReducer((n) => n + 1, 0)
+  useEffect(() => {
+    const unsub = subscribeProgress(forceRender)
+    hydrate() // pull durable state from the SQLite-backed API on startup
+    return unsub
+  }, [])
+
   return (
     <div className="min-h-full">
       <Header />

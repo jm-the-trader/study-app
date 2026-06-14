@@ -1,0 +1,128 @@
+[
+  {
+    "q": "Why is 'a container is a lightweight VM' wrong?",
+    "a": "A container has no guest OS/kernel and no virtual hardware. It's just isolated, resource-limited processes running directly on the HOST kernel. A VM runs a full guest OS via a hypervisor.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "Which two Linux kernel features make containers possible, and what does each do?",
+    "a": "Namespaces (isolation — control what a process can SEE: PID, mount, network, UTS, IPC, user) and cgroups (limits — control what it can USE: CPU, memory, I/O).",
+    "hint": "See vs. use.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "What does the OCI standard give you?",
+    "a": "Portability: an OCI image built by Docker runs under Podman, containerd, CRI-O, and Kubernetes. Standard image + runtime formats are why 'build once, run anywhere' holds.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "What's the difference between an image and a container?",
+    "a": "An image is a read-only template (a stack of layers + metadata) — the class. A container is a running instance of an image with a thin writable layer on top — the object. One image → many containers.",
+    "tags": ["images"]
+  },
+  {
+    "q": "What is an image layer, and why are layers efficient?",
+    "a": "A layer is a set of filesystem changes from one build instruction. Layers are immutable and content-addressed (hashed), so identical layers are deduplicated across images on disk and only new layers transfer over the network.",
+    "tags": ["images"]
+  },
+  {
+    "q": "How does the Docker build cache decide what to rebuild?",
+    "a": "It reuses a cached layer only if that instruction AND all instructions before it are unchanged. The first change invalidates that layer and EVERY layer after it — so order least- to most-frequently-changing.",
+    "tags": ["images", "dockerfile"]
+  },
+  {
+    "q": "Why copy package.json and install deps before copying source code?",
+    "a": "So editing source doesn't bust the dependency-install cache layer. Deps change rarely, source often — ordering deps first keeps the slow install cached across code edits.",
+    "tags": ["dockerfile"]
+  },
+  {
+    "q": "Tags vs. digests — which is immutable?",
+    "a": "Digests (image@sha256:...) are immutable — always the exact same bytes. Tags (myapp:1.4.2, :latest) are mutable and can be re-pointed. Deploy by digest (or enforce immutable tags) for reproducibility; avoid :latest in prod.",
+    "tags": ["images", "registries"]
+  },
+  {
+    "q": "RUN vs CMD vs ENTRYPOINT — when does each run?",
+    "a": "RUN executes at BUILD time (creating a layer). CMD/ENTRYPOINT define the RUN-time command: ENTRYPOINT is the executable, CMD supplies default args (and CMD alone is the overridable default command).",
+    "tags": ["dockerfile"]
+  },
+  {
+    "q": "Why prefer the exec (JSON-array) form of CMD/ENTRYPOINT?",
+    "a": "The exec form runs your app as PID 1 directly, so it receives SIGTERM for graceful shutdown. The shell form wraps it in /bin/sh -c, which often swallows signals.",
+    "tags": ["dockerfile"]
+  },
+  {
+    "q": "What is a multi-stage build and what does it achieve?",
+    "a": "A build that uses one stage for compiling (with toolchains/dev deps) and a separate clean stage for running, copying only artifacts across. It keeps build tools out of the final image — often shrinking GB to tens of MB, with a smaller attack surface.",
+    "tags": ["dockerfile"]
+  },
+  {
+    "q": "Why doesn't deleting a file in a later RUN reduce image size?",
+    "a": "Each layer is immutable; a later layer can hide a file but the earlier layer still contains it. Clean up within the SAME RUN that created the file (e.g. rm -rf /var/lib/apt/lists/* in the install RUN).",
+    "tags": ["dockerfile"]
+  },
+  {
+    "q": "Why does a container stop 'by itself'?",
+    "a": "A container runs exactly as long as its PID 1 process. When that main process exits or crashes, the container stops — which is why 'my container exits immediately' usually means the CMD finished or failed.",
+    "tags": ["running"]
+  },
+  {
+    "q": "How do you read `-p 8080:80`?",
+    "a": "host-port : container-port — host 8080 maps to container 80. Getting the order backwards is a common 'connection refused' bug. EXPOSE alone only documents; -p actually publishes.",
+    "tags": ["running"]
+  },
+  {
+    "q": "Where should persistent container data live, and why not the writable layer?",
+    "a": "In a named volume (Docker-managed) or external service. The container's writable layer is destroyed on `docker rm`, so treat containers as disposable ('cattle, not pets').",
+    "tags": ["running", "storage"]
+  },
+  {
+    "q": "On a user-defined Docker network, how do containers reach each other?",
+    "a": "By container name, via Docker's built-in DNS (e.g. api connects to db using hostname 'db'). The default bridge network lacks this, which is why you create your own network.",
+    "tags": ["running", "networking"]
+  },
+  {
+    "q": "How does `docker stop` shut a container down?",
+    "a": "It sends SIGTERM (graceful), waits ~10s, then SIGKILL. Your app should handle SIGTERM to drain connections and clean up — same signal model as the Linux topic.",
+    "tags": ["running"]
+  },
+  {
+    "q": "What does a container registry do?",
+    "a": "Stores and serves images as tagged repositories; it's the push/pull hub (Docker Hub, GHCR, ECR, Harbor) — analogous to a Git remote for images.",
+    "tags": ["registries"]
+  },
+  {
+    "q": "Decode the parts of ghcr.io/acme/payments-api:1.4.2.",
+    "a": "ghcr.io = registry host; acme = namespace/org; payments-api = repository name; 1.4.2 = tag. (Or @sha256:... for an immutable digest instead of a tag.)",
+    "tags": ["registries"]
+  },
+  {
+    "q": "You build on arm64 but deploy to amd64 servers. What avoids 'exec format error'?",
+    "a": "Build a multi-arch image (e.g. docker buildx --platform linux/amd64,linux/arm64). A manifest list maps one tag to per-arch images so clients pull the right one.",
+    "tags": ["registries"]
+  },
+  {
+    "q": "What is the single most common container security mistake?",
+    "a": "Running the container process as root. Almost no app needs it. Set a non-root USER in the Dockerfile and enforce --user at runtime; add --security-opt=no-new-privileges.",
+    "tags": ["security"]
+  },
+  {
+    "q": "Why avoid `--privileged`, and what's the alternative?",
+    "a": "It disables most isolation (all capabilities, full device access) — a major escalation risk. Instead drop ALL capabilities and add back only the specific one(s) needed (e.g. --cap-add=NET_BIND_SERVICE).",
+    "tags": ["security"]
+  },
+  {
+    "q": "Why does a distroless image improve security beyond size?",
+    "a": "It contains no shell or package manager and minimal libraries — fewer CVEs and nothing for an attacker to pivot with (you can't exec sh because there's no sh).",
+    "tags": ["security"]
+  },
+  {
+    "q": "Why must you never bake secrets into an image?",
+    "a": "Secrets COPY'd or ENV'd in persist in a layer forever and are visible to anyone who pulls the image — even if 'deleted' later. Inject at runtime or use RUN --mount=type=secret / a secrets manager.",
+    "tags": ["security"]
+  },
+  {
+    "q": "Name three container supply-chain security practices.",
+    "a": "Scan images for CVEs in CI (Trivy/Grype/scout); sign images with cosign and verify at deploy; generate an SBOM; pin trusted base images by digest and rebuild regularly to pick up patches.",
+    "tags": ["security"]
+  }
+]

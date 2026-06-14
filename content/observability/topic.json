@@ -1,0 +1,8 @@
+{
+  "id": "observability",
+  "title": "Observability",
+  "emoji": "📊",
+  "blurb": "Understanding running systems: observability vs monitoring, the three pillars (metrics, logs, traces), Prometheus & PromQL, structured logging, distributed tracing with OpenTelemetry, and SLOs, dashboards & alerting.",
+  "accent": "#34d399",
+  "order": 8
+}

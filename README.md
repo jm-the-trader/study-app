@@ -2,7 +2,7 @@
 
 **Learn anything, one card at a time.** A content-driven study app: read bite-sized lessons, then lock the material in with **randomized, spaced-repetition flashcards**. Adding a new subject is as simple as dropping a folder of Markdown + JSON — no app code required, which makes it easy for both humans *and* AI assistants to extend.
 
-> Comes seeded with two complete topics: **PKI & Certificates** and **Nginx**.
+> Comes seeded with ten complete topics — a full **platform-engineering track**: PKI & Certificates · Nginx · Linux & systemd · Git Branching · Containers & Docker · Kubernetes & OpenShift · Terraform & IaC · Observability · ELK / Elastic Stack · Dynatrace.
 
 ---
 
@@ -11,7 +11,14 @@
 ```bash
 cd study-app
 npm install
-npm run dev          # opens http://localhost:5180
+npm run dev          # starts the web app (:5180) AND the progress API (:5182)
+```
+
+`npm run dev` runs both processes together (via `concurrently`). To run them separately:
+
+```bash
+npm run dev:web      # Vite dev server only (:5180)
+npm run dev:api      # progress API only (:5182)
 ```
 
 Build for production:
@@ -19,9 +26,10 @@ Build for production:
 ```bash
 npm run build        # outputs to dist/
 npm run preview      # serve the production build locally
+npm start            # run the progress API (e.g. behind a static host in prod)
 ```
 
-Requirements: Node 18+ (developed on Node 22).
+Requirements: Node 18+ (developed on Node 22). The API uses `better-sqlite3` (a native module compiled on `npm install`).
 
 ---
 
@@ -32,7 +40,7 @@ Requirements: Node 18+ (developed on Node 22).
 | 📚 **Topics & lessons** | Markdown lessons with code highlighting, reading-time estimates, prev/next nav, and "read" tracking. |
 | 🃏 **Randomized flashcards** | Shuffled every session, with self-grading (**Again / Good / Easy**). |
 | 🧠 **Spaced repetition** | A lightweight **Leitner box** system resurfaces hard cards sooner and eases off mastered ones. |
-| 🔥 **Streaks & progress** | All stored locally in your browser — nothing leaves your device. |
+| 🔥 **Streaks & progress** | Persisted to a **local SQLite database** via a tiny API, so progress survives across browsers and machines. localStorage is a fast offline cache; nothing leaves your machine. |
 | 💬 **A kind tutor voice** | Encouraging, never-shaming microcopy throughout. See [`ai/TUTOR_PROMPT.md`](ai/TUTOR_PROMPT.md). |
 
 ---
@@ -47,10 +55,14 @@ study-app/
 │   │   ├── topic.json          ← metadata
 │   │   ├── lessons/*.md        ← ordered Markdown lessons (NN-slug.md)
 │   │   └── flashcards.json     ← [{ q, a, hint?, tags? }]
-│   └── nginx/ …
+│   ├── nginx/  linux/  git/  containers/  kubernetes/
+│   └── terraform/  observability/  elk/  dynatrace/
+├── server/
+│   └── index.js                ← progress API (Express + better-sqlite3)
+├── data/                       ← SQLite database lives here (gitignored)
 ├── src/
 │   ├── content/loadContent.js  ← auto-discovers every topic in /content
-│   ├── lib/progress.js         ← Leitner spaced repetition + progress (localStorage)
+│   ├── lib/progress.js         ← Leitner spaced repetition; localStorage cache + SQLite sync
 │   ├── lib/encouragement.js    ← the "nice AI" voice
 │   ├── pages/                  ← Home, Topic, Lesson, Flashcards
 │   └── App.jsx, main.jsx
@@ -58,6 +70,10 @@ study-app/
 ├── CLAUDE.md                   ← points Claude Code at AGENTS.md
 └── README.md                   ← you are here
 ```
+
+### How progress persistence works
+
+The browser keeps a fast `localStorage` cache and treats the SQLite-backed API as the source of truth: on startup it **hydrates** from `GET /api/state`, and every change writes localStorage immediately and pushes the full snapshot to `PUT /api/state` (debounced). The DB file (`data/studyforge.db`) is **gitignored** — your progress is yours and never committed. Vite proxies `/api/*` to the API (port 5182). If the API is down, the app still works from the local cache.
 
 ---
 
@@ -83,4 +99,5 @@ This repo is designed to be extended by AI coding assistants. If you're an AI (o
 
 ## Tech
 
-React 18 · Vite 5 · Tailwind CSS 3 · react-markdown + rehype-highlight · react-router. No backend, no database, no telemetry — your progress stays in `localStorage`.
+**Frontend:** React 18 · Vite 5 · Tailwind CSS 3 · react-markdown + rehype-highlight · react-router.
+**Backend:** a tiny Express + better-sqlite3 progress API (no cloud, no telemetry — the SQLite file stays on your machine and is gitignored).

@@ -1,0 +1,113 @@
+[
+  {
+    "q": "What is Infrastructure as Code (IaC) and what does it buy you?",
+    "a": "Expressing infrastructure as version-controlled code instead of clicking in a console. You gain reproducibility, code review, change history, automated deployment, and easy teardown/rebuild — software's benefits applied to ops.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "Is Terraform declarative or imperative, and why does that matter?",
+    "a": "Declarative — you describe the desired end state and Terraform computes the steps to reach it. It's the same 'declare desired state + reconcile' principle as Kubernetes, applied to cloud infrastructure.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "What is a Terraform provider, and why does it make Terraform multi-cloud?",
+    "a": "A plugin that knows how to talk to one platform's API (AWS, Azure, GCP, Kubernetes, GitHub, etc.). The same Terraform core + workflow drives any provider, so one tool/mental model manages many platforms.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "In `resource \"aws_s3_bucket\" \"assets\"`, what is each part?",
+    "a": "aws_s3_bucket = the resource TYPE (from the provider); assets = your LOCAL name used to reference it in code (not the real cloud name). Reference attributes as aws_s3_bucket.assets.id.",
+    "tags": ["hcl"]
+  },
+  {
+    "q": "How does Terraform determine the order to create resources?",
+    "a": "It builds a dependency graph from references between resources (e.g. a policy referencing a bucket's id). You declare relationships, not order; Terraform creates independent resources in parallel. Use depends_on only when it can't infer the edge.",
+    "tags": ["hcl", "workflow"]
+  },
+  {
+    "q": "What's the difference between a `resource` and a `data` source?",
+    "a": "resource creates and manages infrastructure; a data source reads information about existing/unmanaged infrastructure (read-only lookup), e.g. the latest AMI or a shared VPC.",
+    "tags": ["hcl"]
+  },
+  {
+    "q": "Why prefer for_each over count for a changing collection?",
+    "a": "count is index-based, so removing a middle item renumbers the rest and Terraform may destroy/recreate them. for_each keys by identity (map/set key), so adding/removing one item doesn't disturb the others.",
+    "tags": ["hcl"]
+  },
+  {
+    "q": "What is the Terraform state file and why is it needed?",
+    "a": "terraform.tfstate maps each resource in your code to the real-world object it created (IDs, attributes). It's Terraform's memory — the bridge between HCL and actual cloud resources, and the basis of every plan (code vs state vs reality).",
+    "tags": ["state"]
+  },
+  {
+    "q": "Why must you never commit terraform.tfstate to Git?",
+    "a": "It stores resource attributes (including secrets like DB passwords) in PLAINTEXT, and it's easily corrupted by merges. Committing it leaks credentials and breaks collaboration. Gitignore it.",
+    "hint": "Two reasons: secrets + corruption.",
+    "tags": ["state", "security"]
+  },
+  {
+    "q": "What three things does a remote backend with locking provide?",
+    "a": "Shared access (one canonical state for the team), locking (concurrent applies are blocked, preventing corruption), and encryption + versioning of state. Non-negotiable for teams (e.g. S3+DynamoDB, Terraform Cloud).",
+    "tags": ["state"]
+  },
+  {
+    "q": "What is drift, how is it detected, and what does apply do about it?",
+    "a": "Drift is the real world diverging from state, usually from manual (ClickOps) changes. `terraform plan` refreshes against live APIs and shows the difference; apply will revert the manual change back to what the code declares. So change things through Terraform.",
+    "tags": ["state"]
+  },
+  {
+    "q": "What is the core Terraform workflow?",
+    "a": "init (download providers + set up backend) → plan (preview the diff, no changes) → apply (make reality match, with confirmation). destroy tears it all down.",
+    "tags": ["workflow"]
+  },
+  {
+    "q": "Why is reading the plan the most important Terraform habit, and what symbols to watch?",
+    "a": "The plan shows exactly what will change before it happens. Watch for `-/+` (replace = destroy then recreate — catastrophic for a database) and `-` (destroy). Always check the 'X to add, Y to change, Z to destroy' line.",
+    "tags": ["workflow"]
+  },
+  {
+    "q": "How do you ensure apply does exactly what you reviewed in the plan?",
+    "a": "Save the plan with `terraform plan -out=tfplan`, then `terraform apply tfplan` — it applies that exact saved plan with no re-planning or surprises.",
+    "tags": ["workflow"]
+  },
+  {
+    "q": "What do lifecycle settings create_before_destroy and prevent_destroy do?",
+    "a": "create_before_destroy builds the replacement before destroying the old one (avoids downtime on replacement). prevent_destroy refuses to destroy a resource — a guard rail for production databases and state buckets.",
+    "tags": ["workflow"]
+  },
+  {
+    "q": "What is a Terraform module?",
+    "a": "A directory of .tf files used like a function: inputs (variables) go in, resources are created, outputs come out (referenced as module.<name>.<output>). It packages a reusable, parameterized piece of infrastructure.",
+    "tags": ["modules"]
+  },
+  {
+    "q": "Why must you pin a version on registry/Git modules (and providers)?",
+    "a": "Unpinned, a module/provider can change under you and alter your infrastructure on the next init. Pin a version or git ref for reproducible, deliberate upgrades — same discipline as pinning image tags.",
+    "tags": ["modules"]
+  },
+  {
+    "q": "What folder pattern keeps staging and prod structurally identical but differently sized?",
+    "a": "Reusable modules/ consumed by thin per-environment root configs (environments/staging, environments/prod) that pass different inputs (sizes, counts, CIDRs) to the same modules.",
+    "tags": ["modules", "environments"]
+  },
+  {
+    "q": "Why are separate directories/state preferred over workspaces for prod vs. staging?",
+    "a": "Separate directories give strong state isolation and per-environment backends/access, so a staging apply can't touch prod. Workspaces share code and backend — a weak boundary that's easy to apply to the wrong one. Use workspaces for ephemeral stacks.",
+    "tags": ["environments"]
+  },
+  {
+    "q": "In a Terraform CI/CD flow, what is the review artifact and why?",
+    "a": "The generated plan (posted on the PR). Reviewing the actual diff ('3 to add, 1 to destroy') catches dangerous changes like a stray database deletion that reading HCL alone might miss. Gate prod apply behind human approval.",
+    "tags": ["cicd", "best-practices"]
+  },
+  {
+    "q": "Which Terraform files should you gitignore, and which should you commit?",
+    "a": "Gitignore: .terraform/, *.tfstate(.*), and secret *.tfvars. Commit: your .tf files and .terraform.lock.hcl (so everyone uses identical provider versions).",
+    "tags": ["best-practices"]
+  },
+  {
+    "q": "How should secrets be handled in Terraform?",
+    "a": "Never hardcode them in .tf or commit secret tfvars. Inject via TF_VAR_ env vars or a secrets manager (Vault/cloud), mark variables/outputs sensitive=true, and encrypt/lock down state (secrets land in state as plaintext).",
+    "tags": ["security", "best-practices"]
+  }
+]

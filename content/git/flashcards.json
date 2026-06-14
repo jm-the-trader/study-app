@@ -1,0 +1,129 @@
+[
+  {
+    "q": "What is a Git branch, really?",
+    "a": "A movable pointer (a ~40-byte ref) to a commit. Creating one doesn't copy files — it just labels a commit — which is why branching is cheap and central to Git.",
+    "tags": ["model"]
+  },
+  {
+    "q": "What is a commit, and what links commits into history?",
+    "a": "An immutable snapshot of tracked files plus metadata and a pointer to its parent(s). Each has a content-derived hash, so commits form a chain/DAG and changing the past changes all later hashes.",
+    "tags": ["model"]
+  },
+  {
+    "q": "What does HEAD point to?",
+    "a": "The branch you're currently on (the attach point for your next commit) — or directly to a commit in 'detached HEAD' state.",
+    "tags": ["model"]
+  },
+  {
+    "q": "Name the three areas a change passes through and the commands between them.",
+    "a": "Working directory --git add--> staging area (index) --git commit--> repository (.git). git restore/checkout brings repo content back to the working dir.",
+    "tags": ["model"]
+  },
+  {
+    "q": "What determines whether `git merge` does a fast-forward vs. a three-way merge?",
+    "a": "Whether the target branch moved since you branched. If it didn't, Git just slides the pointer forward (fast-forward, linear). If both diverged, it creates a merge commit with two parents (three-way).",
+    "tags": ["branching"]
+  },
+  {
+    "q": "What does `git merge --squash` do?",
+    "a": "Combines all of a branch's work into a single set of staged changes (which you then commit) — one clean commit, no merge link to the source branch kept.",
+    "tags": ["branching"]
+  },
+  {
+    "q": "How does rebase differ from merge structurally?",
+    "a": "Merge adds a two-parent merge commit (non-destructive, preserves history). Rebase replays your commits onto a new base as NEW commits with new hashes, producing a linear history.",
+    "tags": ["rebase"]
+  },
+  {
+    "q": "State the Golden Rule of Rebasing.",
+    "a": "Never rebase commits others may have already pulled (anything pushed to a shared branch). Rebase changes hashes, so shared rebasing causes duplicate commits and painful conflicts. Rebase only local, unpushed work.",
+    "hint": "It's about shared vs. private history.",
+    "tags": ["rebase"]
+  },
+  {
+    "q": "What does `git pull --rebase` do and why use it?",
+    "a": "Instead of fetch+merge, it fetches then replays YOUR local commits on top of the updated branch — avoiding noisy little merge commits. Safe because it only rebases your own unpushed commits.",
+    "tags": ["rebase"]
+  },
+  {
+    "q": "What core trade-off do all branching strategies try to manage?",
+    "a": "Long-lived branches drift apart and cause painful merges; short-lived branches integrate cheaply but require discipline and strong automation. Each strategy is a different balance point.",
+    "tags": ["strategy"]
+  },
+  {
+    "q": "Describe GitHub Flow.",
+    "a": "main is always deployable; branch off main per change; open a PR with review + CI; merge to main and deploy. Simple, PR-centric — a great default for web/SaaS teams.",
+    "tags": ["strategy"]
+  },
+  {
+    "q": "What is trunk-based development and what makes it work?",
+    "a": "Everyone integrates into a single trunk (main) at least daily via tiny short-lived branches; unfinished work hides behind feature flags. It needs strong automated tests, small reviewed PRs, and flag hygiene. It underpins elite CI/CD.",
+    "tags": ["strategy"]
+  },
+  {
+    "q": "When is Git Flow (develop + release/* + hotfix/*) a good fit?",
+    "a": "Packaged/versioned software with scheduled releases and multiple supported versions (installed apps, libraries, firmware). It's heavy for continuously-delivered web software.",
+    "tags": ["strategy"]
+  },
+  {
+    "q": "How do feature flags enable trunk-based development?",
+    "a": "They let you merge unfinished code to main disabled behind a flag, decoupling deploy (code is live) from release (feature is visible). Enables gradual rollouts, A/B tests, and kill-switches — at the cost of flag lifecycle management.",
+    "tags": ["strategy"]
+  },
+  {
+    "q": "What does `git commit --amend` do, and what's the caveat?",
+    "a": "Replaces the last commit with a new one (new hash) — to fix its message or add staged changes. Caveat: don't amend a commit already pushed to a shared branch (Golden Rule).",
+    "tags": ["history"]
+  },
+  {
+    "q": "What is interactive rebase used for?",
+    "a": "git rebase -i lets you rewrite a series of commits — reorder, reword, squash/fixup, edit, or drop them — e.g. to squash 'wip/typo' commits into one clean commit before a PR. Private history only.",
+    "tags": ["history"]
+  },
+  {
+    "q": "Compare git reset --soft, --mixed, and --hard.",
+    "a": "All move the branch pointer. --soft keeps changes staged; --mixed (default) keeps them unstaged; --hard discards working-dir changes entirely (destructive — no recycle bin for uncommitted work).",
+    "tags": ["history"]
+  },
+  {
+    "q": "reset vs revert — which undoes a commit on shared main, and why?",
+    "a": "Use revert: it adds a NEW commit that applies the inverse, preserving history (safe for shared branches). reset moves the pointer back, rewriting history — only safe on private branches.",
+    "hint": "One rewrites history, one adds to it.",
+    "tags": ["history"]
+  },
+  {
+    "q": "What is the reflog and why does it make history-editing safe?",
+    "a": "A log of every position HEAD has been (kept ~90 days), including commits 'lost' to reset/rebase/amend. `git reflog` finds them, so you can point a branch back at almost any lost work.",
+    "tags": ["recovery"]
+  },
+  {
+    "q": "What does `git cherry-pick` do?",
+    "a": "Applies a single commit (or range) from another branch onto your current branch as a new commit — e.g. backporting one fix to a release branch.",
+    "tags": ["history"]
+  },
+  {
+    "q": "What's the difference between git fetch and git pull?",
+    "a": "fetch is safe/read-only: it downloads remote changes and updates origin/* refs without touching your files. pull = fetch + integrate (merge or rebase) into your current branch.",
+    "tags": ["remotes"]
+  },
+  {
+    "q": "What are the steps to resolve a merge conflict?",
+    "a": "1) git status to see conflicted files; 2) edit each to the desired final result, removing the <<<<<<< ======= >>>>>>> markers; 3) git add the file; 4) git merge --continue (or rebase --continue). --abort bails out.",
+    "tags": ["conflicts"]
+  },
+  {
+    "q": "What does `git bisect` do?",
+    "a": "Binary-searches history between a known-good and known-bad commit to pinpoint the commit that introduced a bug — ~log2(n) tests. Automatable with `git bisect run ./test.sh` (uses exit code).",
+    "tags": ["tools"]
+  },
+  {
+    "q": "What problem does `git stash` solve?",
+    "a": "It shelves your uncommitted changes (optionally untracked with -u) onto a stack so you can switch contexts with a clean working dir, then `git stash pop` to restore them later.",
+    "tags": ["tools"]
+  },
+  {
+    "q": "What does `git worktree` let you do?",
+    "a": "Check out another branch in a separate directory sharing the same repo — work on a hotfix or review a PR without stashing or disturbing your current branch.",
+    "tags": ["tools"]
+  }
+]

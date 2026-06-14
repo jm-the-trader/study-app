@@ -1,0 +1,8 @@
+{
+  "id": "kubernetes",
+  "title": "Kubernetes & OpenShift",
+  "emoji": "☸️",
+  "blurb": "Container orchestration end to end: cluster architecture, Pods/Deployments, Services and Ingress, ConfigMaps/Secrets and storage, health/scaling/resources, and what OpenShift adds on top.",
+  "accent": "#818cf8",
+  "order": 6
+}

@@ -1,0 +1,120 @@
+[
+  {
+    "q": "What is PID 1 on a modern Linux system, and why is it special?",
+    "a": "PID 1 is the init system — today usually systemd. The kernel starts exactly one process (PID 1), and every other process descends from it, forming the process tree.",
+    "tags": ["processes"]
+  },
+  {
+    "q": "How does Linux create a new process to run a program?",
+    "a": "fork() clones the current process, then the child calls exec() to replace its own program image with the new program. 'Run a command' = fork a copy, then become the new program.",
+    "tags": ["processes"]
+  },
+  {
+    "q": "What is a zombie (Z) process and how do you fix a pile of them?",
+    "a": "A finished process whose parent hasn't read its exit status yet. You can't kill it (it's already dead) — you fix the buggy parent that isn't reaping its children.",
+    "tags": ["processes"]
+  },
+  {
+    "q": "Why prefer SIGTERM over SIGKILL?",
+    "a": "SIGTERM is catchable — it lets a process flush buffers, finish requests, and clean up locks (graceful shutdown). SIGKILL (9) is uncatchable; the process gets no chance to clean up, risking data corruption or stale locks.",
+    "hint": "One can be caught, one can't.",
+    "tags": ["signals"]
+  },
+  {
+    "q": "What does an exit code of 0 mean, and how do you see the last one in a shell?",
+    "a": "0 means success; non-zero means failure. The shell exposes the last command's exit code as $? . Shells, CI, and systemd all branch on exit codes.",
+    "tags": ["processes"]
+  },
+  {
+    "q": "What is a systemd 'unit' and how is its type indicated?",
+    "a": "A unit is anything systemd manages, described by an INI-style file. The type is the filename suffix: .service, .socket, .timer, .target, .mount, .path.",
+    "tags": ["systemd", "units"]
+  },
+  {
+    "q": "Where should you put custom systemd units or overrides, and why not edit packaged ones?",
+    "a": "Put them in /etc/systemd/system/ (highest priority) or use `systemctl edit` drop-ins. Packaged units in /usr/lib/systemd/system/ get overwritten on upgrade, so never edit them in place.",
+    "tags": ["systemd", "units"]
+  },
+  {
+    "q": "What are the three sections of a .service unit and what does each define?",
+    "a": "[Unit]: metadata + dependencies/ordering (After/Before/Wants/Requires). [Service]: how to run it (ExecStart, Restart, User, Environment). [Install]: what enabling means (WantedBy target).",
+    "tags": ["systemd", "units"]
+  },
+  {
+    "q": "What's the difference between Wants= and Requires=?",
+    "a": "Both pull in a dependency, but Requires makes your unit fail if the dependency fails (hard), while Wants is a soft wish (preferred for resilience). Neither alone sets order — use After/Before for that.",
+    "tags": ["systemd", "units"]
+  },
+  {
+    "q": "What does Restart=on-failure give you?",
+    "a": "Automatic restart of a crashed service — turning any plain program into a self-healing daemon without writing daemonization logic. It's the host-level version of what orchestrators do for pods.",
+    "tags": ["systemd"]
+  },
+  {
+    "q": "What is the difference between `systemctl enable` and `systemctl start`?",
+    "a": "start runs the service right now (this boot only); enable makes it start automatically at boot. They're independent — `enable --now` does both.",
+    "hint": "Classic 'why didn't it come back after reboot?' bug.",
+    "tags": ["systemctl"]
+  },
+  {
+    "q": "What's the difference between `systemctl reload` and `systemctl restart`?",
+    "a": "reload runs the unit's ExecReload to re-read config with no downtime (if supported); restart kills and re-launches the process, dropping in-flight work. Prefer reload for config changes.",
+    "tags": ["systemctl"]
+  },
+  {
+    "q": "After editing a unit file, what must you run before your change takes effect?",
+    "a": "systemctl daemon-reload (re-reads unit files from disk), then restart/reload the service. (`systemctl edit` runs daemon-reload for you.)",
+    "hint": "systemd caches unit files.",
+    "tags": ["systemctl"]
+  },
+  {
+    "q": "What's the fastest way to find broken services?",
+    "a": "systemctl --failed (or list-units --state=failed), then `systemctl status <unit>` for the exit code/output, then `journalctl -u <unit>` for full logs.",
+    "tags": ["systemctl", "troubleshooting"]
+  },
+  {
+    "q": "Why does `systemctl stop` reliably kill all of a service's child processes?",
+    "a": "systemd tracks every process of a service in its own cgroup, so it can stop the entire process tree — no orphaned children, unlike old init scripts.",
+    "tags": ["systemctl", "cgroups"]
+  },
+  {
+    "q": "Where do systemd services' logs go, and how do you read one service's logs?",
+    "a": "Into the journal (systemd-journald captures stdout/stderr as structured entries). Read with `journalctl -u <unit>`; add -e (end), -f (follow), -n N (last N), --since.",
+    "tags": ["journald"]
+  },
+  {
+    "q": "How should a service under systemd handle logging?",
+    "a": "Just write to stdout/stderr — the journal captures it with full metadata. No need to manage log files, rotation, or syslog. (Same 'log to stdout' contract containers use.)",
+    "tags": ["journald"]
+  },
+  {
+    "q": "How do you read logs from the PREVIOUS boot, and what's the prerequisite?",
+    "a": "journalctl -b -1 (and `--list-boots` to see them). It only works if persistent journal storage is enabled (/var/log/journal exists); otherwise the journal is wiped on reboot.",
+    "tags": ["journald"]
+  },
+  {
+    "q": "How do you filter the journal to only error-level entries?",
+    "a": "Use the priority flag: `journalctl -p err` (priority err and worse). Levels: 0 emerg … 3 err … 4 warning … 6 info … 7 debug; lower = more severe. Combine with -u and --since.",
+    "tags": ["journald"]
+  },
+  {
+    "q": "What are cgroups and what do they do?",
+    "a": "Control groups — the kernel feature that limits and accounts for the collective CPU, memory, and I/O of a group of processes. Both systemd resource limits and containers rely on them.",
+    "tags": ["cgroups"]
+  },
+  {
+    "q": "What's the difference between MemoryHigh and MemoryMax in a systemd unit?",
+    "a": "MemoryHigh is a soft cap — the kernel throttles and reclaims aggressively as the group approaches it. MemoryMax is the hard wall — exceeding it triggers the OOM killer inside the cgroup. Set High below Max for graceful pressure.",
+    "tags": ["cgroups"]
+  },
+  {
+    "q": "In kernel terms, what happens when a Kubernetes pod shows 'OOMKilled'?",
+    "a": "The container's memory limit is enforced as a cgroup MemoryMax on the host; the process group exceeded that hard cap and the cgroup OOM killer terminated it. Container limits ARE cgroups.",
+    "tags": ["cgroups"]
+  },
+  {
+    "q": "Which systemd directives cap a service's CPU and memory?",
+    "a": "MemoryMax / MemoryHigh for memory; CPUQuota (e.g. 50%) and CPUWeight for CPU; TasksMax to cap process/thread count. Apply live with `systemctl set-property`.",
+    "tags": ["cgroups"]
+  }
+]

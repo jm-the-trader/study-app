@@ -1,0 +1,102 @@
+[
+  {
+    "q": "In one sentence, what is Dynatrace?",
+    "a": "A commercial, integrated, AI-driven full-stack observability platform that automatically discovers, instruments, and analyzes your stack — the build-vs-buy alternative to assembling Prometheus + ELK + Jaeger + Grafana yourself.",
+    "tags": ["overview"]
+  },
+  {
+    "q": "What's the core trade-off between a DIY observability stack and Dynatrace?",
+    "a": "DIY (Prometheus/ELK/Jaeger/Grafana) gives maximum control and flexibility but you build/operate the plumbing and instrument apps yourself. Dynatrace gives far less manual work via auto-instrumentation + AI, at the cost of money and some control/lock-in.",
+    "tags": ["overview"]
+  },
+  {
+    "q": "What are the four defining ideas of Dynatrace?",
+    "a": "OneAgent (automatic full-stack instrumentation), Smartscape (automatic topology map), Davis (causal AI root-cause → problems), and Grail + DQL (unified data lakehouse + query language).",
+    "tags": ["overview"]
+  },
+  {
+    "q": "What is OneAgent and how does it differ from manual (OpenTelemetry) instrumentation?",
+    "a": "OneAgent is a single agent per host that auto-discovers running processes and instruments them at code level with NO manual code changes — capturing host metrics, services, traces, RUM, and logs. Manual instrumentation requires you to add SDKs/spans/metrics yourself.",
+    "tags": ["oneagent"]
+  },
+  {
+    "q": "What is an ActiveGate and when do you need one?",
+    "a": "A gateway/worker component that routes OneAgent data to Dynatrace, performs agentless/remote monitoring (cloud APIs, network devices, the Kubernetes API), and runs synthetic checks. Use it for the gateway role and to monitor things you can't install OneAgent on.",
+    "tags": ["oneagent"]
+  },
+  {
+    "q": "Does Dynatrace only work with OneAgent, or can you use OpenTelemetry too?",
+    "a": "It ingests OpenTelemetry traces/metrics/logs as well, so you can combine OTel-instrumented services with OneAgent-captured data and add custom metrics/spans where OneAgent's auto-instrumentation isn't enough.",
+    "tags": ["oneagent", "data"]
+  },
+  {
+    "q": "What is a 'monitored entity' and why does the entity model matter?",
+    "a": "Everything Dynatrace discovers (hosts, processes, services, pods, applications, DBs, cloud resources) is an entity with identity and relationships. Modeling entities + relationships (not just loose metrics) is what lets Dynatrace reason about impact and causality.",
+    "tags": ["smartscape"]
+  },
+  {
+    "q": "What is Smartscape?",
+    "a": "Dynatrace's automatically-built, real-time dependency map of all entities — vertically (application → service → process → host → datacenter) and horizontally (service-to-service call dependencies). No manual diagramming; it stays current as the environment changes.",
+    "tags": ["smartscape"]
+  },
+  {
+    "q": "What is Davis, and what makes it 'causal'?",
+    "a": "Dynatrace's AI engine for automatic anomaly detection and root-cause analysis. It's causal because it correlates anomalous events along the Smartscape dependency graph and in time to identify a likely root cause — not just independent threshold pattern-matching.",
+    "tags": ["davis"]
+  },
+  {
+    "q": "What is a Dynatrace 'problem' and how does it fight alert fatigue?",
+    "a": "A single consolidated incident that groups all related symptom-events across affected entities, identifies the root-cause entity, and shows impact + timeline — instead of paging you with dozens of disconnected threshold alerts.",
+    "tags": ["davis"]
+  },
+  {
+    "q": "What is PurePath?",
+    "a": "Dynatrace's distributed tracing technology — like normal tracing but captured automatically by OneAgent, typically down to method-level and database statements. It can often pinpoint the slow method or SQL query inside a service, not just the slow service.",
+    "tags": ["data", "tracing"]
+  },
+  {
+    "q": "What's the difference between RUM and Synthetic monitoring in Dynatrace?",
+    "a": "RUM (Real User Monitoring) captures actual users' browser/mobile experience (load times, errors, Web Vitals) and links to backend PurePaths. Synthetic runs scripted browser/HTTP checks from chosen locations to test availability/performance proactively, even with no real users.",
+    "tags": ["data"]
+  },
+  {
+    "q": "What is Grail?",
+    "a": "Dynatrace's data lakehouse storing logs, metrics, traces, and events together with entity context, designed for massive, fast, schema-on-read queries — so you can ask new questions of old data without predefining schemas/indexes.",
+    "tags": ["data", "grail"]
+  },
+  {
+    "q": "What is DQL and how is it structured?",
+    "a": "Dynatrace Query Language — a pipe-based language (fetch <data> | filter ... | summarize ...) that queries logs, spans, metrics, and events the same way because they all live in Grail. One query surface across signals, vs. learning PromQL + ES DSL + a trace UI separately.",
+    "tags": ["grail", "dql"]
+  },
+  {
+    "q": "How is Dynatrace deployed on Kubernetes/OpenShift?",
+    "a": "Via the Dynatrace Operator (installed by Helm/manifests), which rolls out OneAgent (commonly a DaemonSet, one per node) plus an in-cluster ActiveGate, with automatic workload discovery and k8s metadata enrichment (and respects OpenShift SCC/non-root constraints).",
+    "tags": ["operations", "kubernetes"]
+  },
+  {
+    "q": "What is an alerting profile for in Dynatrace?",
+    "a": "It controls which problems notify whom — by severity, entity tags, or management zones — so teams only get paged for relevant issues. Davis reduces noise by grouping symptoms, but you still tune sensitivity, profiles, and maintenance windows.",
+    "tags": ["operations", "alerting"]
+  },
+  {
+    "q": "How can you manage Dynatrace configuration as code?",
+    "a": "With Monaco (Monitoring as Code), the Dynatrace Terraform provider, and the REST APIs — version-controlling dashboards, alerting, and SLOs to get PR review, reproducibility across tenants, no config drift, and rollback (IaC discipline for observability).",
+    "tags": ["operations", "automation"]
+  },
+  {
+    "q": "Why is Dynatrace cost an engineering concern?",
+    "a": "Licensing is consumption-based (host-hours, data ingested/retained, synthetic actions, RUM sessions, query volume), so engineering choices — log ingestion volume, trace/RUM sampling, retention, which hosts get full-stack monitoring — directly drive the bill. Right-size deliberately.",
+    "tags": ["operations", "cost"]
+  },
+  {
+    "q": "What are Dynatrace's two main deployment models?",
+    "a": "SaaS (Dynatrace hosts the cluster; you run OneAgents/ActiveGates — most common) and Managed (the Dynatrace cluster runs in your own infrastructure, for data-residency/compliance needs).",
+    "tags": ["operations"]
+  },
+  {
+    "q": "Does Dynatrace support SLOs?",
+    "a": "Yes — natively. You define an SLI (availability, success rate, latency threshold), set a target over a window, and track the error budget and burn — the same SLI/SLO/error-budget model from general observability, built into the platform.",
+    "tags": ["operations", "slo"]
+  }
+]

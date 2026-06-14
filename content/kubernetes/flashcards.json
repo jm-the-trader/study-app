@@ -1,0 +1,127 @@
+[
+  {
+    "q": "What is the core operating principle of Kubernetes?",
+    "a": "Declarative desired state + reconciliation: you declare what you want (in YAML), and controllers continuously drive actual state toward desired. This is why K8s self-heals — a dead Pod makes actual < desired, so a controller recreates it.",
+    "tags": ["architecture"]
+  },
+  {
+    "q": "Which component is the cluster's single front door, and which stores all cluster state?",
+    "a": "The kube-apiserver is the front door (everything talks to it); etcd is the key-value store holding all cluster state. Only the apiserver reads/writes etcd.",
+    "tags": ["architecture"]
+  },
+  {
+    "q": "What do the scheduler, controller-manager, kubelet, and kube-proxy each do?",
+    "a": "Scheduler assigns Pods to Nodes; controller-manager runs the reconciliation loops; kubelet (on each node) makes the runtime run assigned Pods and reports health; kube-proxy programs node networking so Service VIPs reach Pods.",
+    "tags": ["architecture"]
+  },
+  {
+    "q": "Why do you almost never create a bare Pod?",
+    "a": "Pods are mortal and disposable — they aren't repaired in place, get new IPs, and aren't recreated if their node dies. You create a controller (Deployment) that manages Pods for you.",
+    "tags": ["workloads"]
+  },
+  {
+    "q": "What does a Deployment manage, and what does it give you?",
+    "a": "A Deployment manages ReplicaSets (which keep N identical Pods alive) and provides declarative rolling updates and rollbacks — the standard way to run a stateless app.",
+    "tags": ["workloads"]
+  },
+  {
+    "q": "How are Kubernetes objects connected to each other?",
+    "a": "Via labels (key/value tags on objects) and selectors (label queries). A Deployment owns Pods whose labels match its selector; Services target Pods the same way. selector.matchLabels must match the Pod template's labels.",
+    "tags": ["workloads"]
+  },
+  {
+    "q": "What happens during a rolling update, and why is rollback instant?",
+    "a": "The Deployment creates a new ReplicaSet and gradually scales it up while scaling the old one down (respecting maxUnavailable/maxSurge). The old ReplicaSet is kept at 0, so `kubectl rollout undo` just scales it back up — instant rollback.",
+    "tags": ["workloads"]
+  },
+  {
+    "q": "When do you use a DaemonSet, Job/CronJob, or StatefulSet instead of a Deployment?",
+    "a": "DaemonSet: one Pod per node (agents/log collectors). Job/CronJob: run to completion / on a schedule. StatefulSet: stateful apps needing stable identity + per-Pod persistent storage (databases).",
+    "tags": ["workloads"]
+  },
+  {
+    "q": "Why can't you connect directly to a Pod's IP, and what solves it?",
+    "a": "Pods are ephemeral and get new IPs constantly. A Service provides a stable virtual IP + DNS name in front of label-selected Pods and load-balances to the healthy ones (its Endpoints).",
+    "tags": ["networking"]
+  },
+  {
+    "q": "Compare ClusterIP, NodePort, and LoadBalancer Service types.",
+    "a": "ClusterIP (default): reachable only inside the cluster (internal services). NodePort: opens a static port on every node's IP. LoadBalancer: provisions an external cloud load balancer with a public IP — the standard external exposure on cloud.",
+    "tags": ["networking"]
+  },
+  {
+    "q": "How does service discovery work in Kubernetes?",
+    "a": "Cluster DNS (CoreDNS) gives every Service a name — <service>, <service>.<namespace>, or the FQDN. Apps connect by hostname (e.g. 'db' or 'api.prod'), no IPs needed.",
+    "tags": ["networking"]
+  },
+  {
+    "q": "What does Ingress do, and what's the gotcha?",
+    "a": "Ingress provides one entry point that routes external HTTP(S) by host/path to many Services, with TLS. Gotcha: an Ingress resource does nothing without an Ingress controller (ingress-nginx, Traefik, etc.) installed to implement the rules.",
+    "tags": ["networking"]
+  },
+  {
+    "q": "What's the difference between a ConfigMap and a Secret?",
+    "a": "Both decouple config from the image and can be consumed as env vars or mounted files. ConfigMaps hold non-sensitive config; Secrets hold sensitive values (passwords, tokens, TLS certs).",
+    "tags": ["config"]
+  },
+  {
+    "q": "Why is 'Secrets are base64-encoded' not 'Secrets are secure'?",
+    "a": "Base64 is encoding, not encryption — by default Secrets are only base64 in etcd, readable by anyone with etcd/API access. Harden with encryption at rest, tight RBAC, and keep real Secrets out of Git (Sealed Secrets / External Secrets / Vault).",
+    "tags": ["config", "security"]
+  },
+  {
+    "q": "Explain PVC, PV, and StorageClass.",
+    "a": "PVC = a Pod's storage request (size + access mode). PV = an actual piece of storage. StorageClass = a storage type enabling dynamic provisioning, so a PVC auto-creates a matching PV. (Request / supply / vending machine.)",
+    "tags": ["storage"]
+  },
+  {
+    "q": "Why do databases use a StatefulSet rather than a Deployment?",
+    "a": "StatefulSets give each Pod a stable identity (db-0, db-1) and, via volumeClaimTemplates, its own PVC that follows it across restarts — so each replica always reattaches to its own disk. Plus ordered rollout.",
+    "tags": ["storage", "workloads"]
+  },
+  {
+    "q": "What's the difference between a liveness and a readiness probe?",
+    "a": "Liveness: is the app alive? Failing it RESTARTS the container. Readiness: is it ready to serve now? Failing it removes the Pod from Service endpoints (no traffic) WITHOUT restarting. Don't conflate them.",
+    "tags": ["health"]
+  },
+  {
+    "q": "What's the difference between resource requests and limits?",
+    "a": "requests = the guaranteed reservation the scheduler uses to place the Pod. limits = the hard ceiling (enforced as cgroups). Exceed memory limit → OOMKilled; exceed CPU limit → throttled (not killed).",
+    "tags": ["resources"]
+  },
+  {
+    "q": "What are the three QoS classes and which is evicted first?",
+    "a": "Guaranteed (requests==limits) — evicted last; Burstable (requests<limits) — middle; BestEffort (no requests/limits) — evicted FIRST under node memory pressure. Use Guaranteed for critical workloads.",
+    "tags": ["resources"]
+  },
+  {
+    "q": "What does an HPA do, and what does CPU-based HPA require?",
+    "a": "The HorizontalPodAutoscaler adds/removes Pod replicas based on metrics (e.g. keep avg CPU ~70%). CPU-based scaling REQUIRES CPU requests, because utilization is measured against the request.",
+    "tags": ["scaling"]
+  },
+  {
+    "q": "What is the relationship between OpenShift and Kubernetes?",
+    "a": "OpenShift IS Kubernetes — a certified distribution — plus an enterprise layer (security guardrails, developer tooling, bundled router/registry/monitoring/CI). Standard K8s objects and kubectl all still work.",
+    "tags": ["openshift"]
+  },
+  {
+    "q": "What is an OpenShift Route, and how does it relate to Ingress?",
+    "a": "A Route is OpenShift's native object for exposing HTTP(S) externally via a built-in HAProxy router, with easy edge/passthrough/reencrypt TLS. Ingress objects also work (OpenShift creates Routes for them).",
+    "tags": ["openshift"]
+  },
+  {
+    "q": "A public image works on plain K8s but fails with permission errors on OpenShift. Why?",
+    "a": "OpenShift refuses to run containers as root by default and assigns a random high UID, enforced by Security Context Constraints (SCCs). Fix: build images that run as an arbitrary non-root UID (group-writable, GID 0, no privileged ports).",
+    "tags": ["openshift", "security"]
+  },
+  {
+    "q": "What do S2I and BuildConfig provide in OpenShift?",
+    "a": "Source-to-Image builds a runnable container image from source code + a builder image with no Dockerfile; BuildConfig defines the build and ImageStream tracks versions and can trigger redeploys. `oc new-app` goes from Git to running Pod.",
+    "tags": ["openshift"]
+  },
+  {
+    "q": "Deployment vs DeploymentConfig in OpenShift — which should you use?",
+    "a": "Prefer the standard Kubernetes Deployment for new work. DeploymentConfig is OpenShift's older object (with triggers/hooks) you'll still see in legacy projects.",
+    "tags": ["openshift"]
+  }
+]

@@ -1,0 +1,118 @@
+[
+  {
+    "q": "What does each letter of ELK stand for, and what stage does each own?",
+    "a": "Elasticsearch (store + search engine), Logstash (server-side ingest/processing pipeline), Kibana (web UI for search, dashboards, alerting). Data flows: collect → process → store/search → visualize.",
+    "tags": ["overview"]
+  },
+  {
+    "q": "Why is the stack now called the 'Elastic Stack' instead of ELK?",
+    "a": "Because Beats (lightweight edge shippers like Filebeat/Metricbeat) were added, so the three-letter acronym no longer fit. People still say 'ELK' colloquially.",
+    "tags": ["overview"]
+  },
+  {
+    "q": "What is EFK and where is it common?",
+    "a": "ELK with Fluentd or Fluent Bit replacing Logstash as the collector. Common in Kubernetes, where Fluent Bit runs as a DaemonSet tailing container stdout and shipping to Elasticsearch.",
+    "tags": ["overview"]
+  },
+  {
+    "q": "What is OpenSearch?",
+    "a": "An open-source fork of Elasticsearch (with OpenSearch Dashboards) created by AWS after Elastic's 2021 license change. The core concepts — inverted index, shards, Query DSL, dashboards — apply to both.",
+    "tags": ["overview"]
+  },
+  {
+    "q": "How does Elasticsearch's data model map to SQL concepts?",
+    "a": "Index ≈ table, document ≈ row, field ≈ column — but documents are schema-flexible JSON, and the index has a 'mapping' defining field types. It's document-oriented, not relational.",
+    "tags": ["elasticsearch"]
+  },
+  {
+    "q": "What is the inverted index and why does it make search fast?",
+    "a": "A map of term → list of documents containing it (like a book's index). Searching a term is a direct lookup of a pre-built list, not a full scan — which is why Elasticsearch is a fast full-text search engine.",
+    "tags": ["elasticsearch"]
+  },
+  {
+    "q": "When should a string field be `text` vs `keyword`?",
+    "a": "text is analyzed (tokenized/lowercased) for full-text search — good for messages, bad for sort/aggregate. keyword is the exact unanalyzed value — use it for filtering, sorting, and aggregations (IDs, statuses, hostnames).",
+    "hint": "Aggregating on the wrong one fails.",
+    "tags": ["elasticsearch", "mapping"]
+  },
+  {
+    "q": "What's the difference between a primary shard and a replica shard?",
+    "a": "Primary shards split an index across nodes (scale + parallel search); replica shards are copies on other nodes for high availability and read throughput. A search fans out to all shards in parallel and merges results.",
+    "tags": ["elasticsearch", "scaling"]
+  },
+  {
+    "q": "Why is oversharding harmful, and can you change primary shard count later?",
+    "a": "Each shard has memory/overhead, so thousands of tiny shards degrade performance. The number of PRIMARY shards is fixed at index creation — changing it requires reindexing. Aim for shards in the tens of GB.",
+    "tags": ["elasticsearch", "operations"]
+  },
+  {
+    "q": "What do Elasticsearch cluster health colors green/yellow/red mean?",
+    "a": "Green: all shards (incl. replicas) assigned. Yellow: primaries OK but some replicas unassigned. Red: some PRIMARY shards unassigned — data unavailable; investigate immediately.",
+    "tags": ["elasticsearch", "operations"]
+  },
+  {
+    "q": "What's the role of Beats vs. Logstash, and when can you skip Logstash?",
+    "a": "Beats are lightweight edge shippers (Filebeat tails logs). Logstash is a centralized input→filter→output processing pipeline. Skip Logstash when Beats ship directly to Elasticsearch or an ingest pipeline handles light parsing.",
+    "tags": ["ingest"]
+  },
+  {
+    "q": "What does grok do, and what's the easier alternative?",
+    "a": "Grok parses unstructured log text into named fields using patterns (e.g. extracting client_ip, status, path). The easier alternative, when you control the app, is emitting JSON logs that parse straight into fields.",
+    "tags": ["ingest"]
+  },
+  {
+    "q": "What is ECS and why use it?",
+    "a": "The Elastic Common Schema — standard field names (@timestamp, host.name, log.level, service.name…). Mapping data to ECS makes dashboards, alerts, and cross-source correlation work consistently. Retrofitting field names later is painful.",
+    "tags": ["ingest"]
+  },
+  {
+    "q": "In the Query DSL, when do you use `match` vs `term`?",
+    "a": "match = full-text query (analyzed, relevance-scored) on text fields. term = exact match (no analysis) on keyword/numbers/dates. Using term on a text field is a classic bug.",
+    "tags": ["search"]
+  },
+  {
+    "q": "Why put exact filters in a bool query's `filter` clause rather than `must`?",
+    "a": "filter (and must_not) clauses don't compute a relevance score, so they're cacheable and faster. Reserve must/should for true full-text relevance. Log analytics mostly lives in filter.",
+    "tags": ["search"]
+  },
+  {
+    "q": "What are aggregations and why are they powerful?",
+    "a": "Queries that summarize matching documents — bucket aggs group (terms, date_histogram, range) and metric aggs compute (avg, sum, percentiles, cardinality). They turn unstructured logs into metrics/charts, e.g. '5xx per 5 min by service'.",
+    "tags": ["search"]
+  },
+  {
+    "q": "What is KQL in Kibana?",
+    "a": "Kibana Query Language — the terse search-bar syntax (e.g. `status: 500 and service: \"payments\"`) that Kibana translates into the Query DSL. Great for interactive exploration; raw DSL for complex/programmatic queries.",
+    "tags": ["kibana", "search"]
+  },
+  {
+    "q": "What is a Kibana data view (index pattern)?",
+    "a": "A definition telling Kibana which indices to read (usually a wildcard like app-logs-*) plus the time field. The wildcard lets Kibana search across many daily indices as one dataset.",
+    "tags": ["kibana"]
+  },
+  {
+    "q": "What is Kibana Discover used for?",
+    "a": "Interactive, time-scoped log investigation: KQL search + field filters over raw documents, with a volume histogram showing matches over time (a spike marks when something happened). It's fleet-wide 'tail + grep', structured.",
+    "tags": ["kibana"]
+  },
+  {
+    "q": "What is Index Lifecycle Management (ILM)?",
+    "a": "Automated movement of an index through phases as it ages — hot (fast hardware, actively written) → warm → cold/frozen (cheap storage) → delete. It matches storage cost to data value and automates retention — the biggest lever on ELK cost/performance.",
+    "tags": ["operations"]
+  },
+  {
+    "q": "What do rollover and data streams do?",
+    "a": "Rollover starts a new backing index when one hits a size/age/doc threshold (size-based rollover keeps shards well-sized). Data streams give you one logical write target while managing the backing indices and ILM behind it.",
+    "tags": ["operations"]
+  },
+  {
+    "q": "Give two production hardening/resilience steps for an Elasticsearch cluster.",
+    "a": "Any of: enable auth + RBAC and TLS (never expose ES to the internet); keep ≥1 replica; take snapshots to object storage; set JVM heap ~50% RAM and under ~32 GB; use dedicated node roles with an odd number of master nodes (avoid split-brain).",
+    "tags": ["operations", "security"]
+  },
+  {
+    "q": "What is a 'mapping explosion' and why avoid it?",
+    "a": "When dynamic mapping creates thousands of fields from high-cardinality/arbitrary JSON keys, destabilizing the cluster (memory/cluster-state bloat). Constrain dynamic mapping and define mappings deliberately.",
+    "tags": ["operations"]
+  }
+]

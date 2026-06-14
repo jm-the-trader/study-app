@@ -45,8 +45,10 @@ Flashcards should test *understanding*, not trivia: one idea per card, a self-co
 
 ## Working on the app code
 
-- Stack: React 18 + Vite 5 + Tailwind 3, react-router, react-markdown + rehype-highlight. No backend.
-- Progress/spaced-repetition logic is in `src/lib/progress.js` (Leitner boxes, localStorage). Keep it backend-free and private — **no telemetry, no network calls for user data.**
+- Stack: React 18 + Vite 5 + Tailwind 3, react-router, react-markdown + rehype-highlight (frontend) + a small Express + better-sqlite3 progress API (`server/index.js`).
+- Progress/spaced-repetition logic is in `src/lib/progress.js` (Leitner boxes). It keeps a synchronous `localStorage` cache and syncs to the **local SQLite-backed API** (`/api/state`): `hydrate()` pulls on startup, `save()` pushes the full snapshot (debounced). The DB file (`data/studyforge.db`) is **gitignored**.
+- **Privacy is a hard rule:** the only network calls for user data go to the *local* progress API. **No telemetry, no third-party/cloud calls for user progress.** Keep persistence local and the DB gitignored.
+- `npm run dev` runs web + API together; Vite proxies `/api/*` to port 5182. The app must still work (from the localStorage cache) if the API is down.
 - Match the existing code style (functional components, Tailwind classes, the warm dark theme tokens in `tailwind.config.js`).
 - There is no test suite or linter configured. Verify changes by running `npm run dev` and exercising the UI.
 
@@ -54,8 +56,8 @@ Flashcards should test *understanding*, not trivia: one idea per card, a self-co
 
 - ✅ Do: add/improve topics, fix factual errors, polish lessons, add flashcards, improve UX.
 - ✅ Do: preserve the kind tutor voice and the privacy-by-default (local-only) model.
-- ⚠️ Ask first / be cautious: large dependency additions, introducing a backend, anything that would send user study data off-device.
-- ❌ Don't: invent facts, fabricate sources, write shaming/snarky copy, or break the content contract (it'll silently drop content from the UI).
+- ⚠️ Ask first / be cautious: large dependency additions, anything that would send user study data **off-device** (the existing API is local-only by design), or schema changes to the progress DB.
+- ❌ Don't: invent facts, fabricate sources, write shaming/snarky copy, break the content contract (it'll silently drop content from the UI), or commit the SQLite DB / state files.
 
 ## Quick checklist before you finish
 

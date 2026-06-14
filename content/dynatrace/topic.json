@@ -1,0 +1,8 @@
+{
+  "id": "dynatrace",
+  "title": "Dynatrace",
+  "emoji": "🔷",
+  "blurb": "A commercial full-stack observability platform: automatic instrumentation with OneAgent, the Smartscape topology, Davis causal AI for root-cause, PurePath tracing, the Grail data lakehouse and DQL, plus problems, SLOs and Kubernetes monitoring.",
+  "accent": "#1496ff",
+  "order": 10
+}

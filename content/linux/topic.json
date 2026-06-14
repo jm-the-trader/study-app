@@ -1,0 +1,8 @@
+{
+  "id": "linux",
+  "title": "Linux & systemd",
+  "emoji": "🐧",
+  "blurb": "The fundamentals under every platform: the Linux process model, signals, systemd units and services, journald logging, and resource control with cgroups.",
+  "accent": "#fbbf24",
+  "order": 3
+}

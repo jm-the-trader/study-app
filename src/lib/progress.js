@@ -1,17 +1,24 @@
-// Local-only progress + lightweight spaced repetition (Leitner boxes).
-// Nothing leaves the browser; everything lives in localStorage. This keeps the
-// app private and zero-backend while still giving learners real retention gains.
+// Progress + lightweight spaced repetition (Leitner boxes).
+//
+// Persistence model: the SQLite-backed API (/api/state) is the durable source of
+// truth, so progress survives across browsers and machines. localStorage is a
+// fast, synchronous local cache + offline fallback. On startup call hydrate() to
+// pull the latest from the server; every change writes localStorage immediately
+// and pushes the full snapshot back to the server (debounced).
 
 const KEY = 'studyforge.progress.v1'
+const API = '/api/state'
 
 // Leitner boxes 1..5. Lower box = seen sooner / more often. A correct answer
 // promotes a card up a box; a miss sends it back to box 1 (re-learn).
 const BOX_INTERVALS_DAYS = { 1: 0, 2: 1, 3: 3, 4: 7, 5: 16 }
 
-function load() {
+const EMPTY = () => ({ lessonsRead: {}, cards: {}, streak: { count: 0, last: null } })
+
+function readLocal() {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return { lessonsRead: {}, cards: {}, streak: { count: 0, last: null } }
+    if (!raw) return EMPTY()
     const parsed = JSON.parse(raw)
     return {
       lessonsRead: parsed.lessonsRead || {},
@@ -19,15 +26,73 @@ function load() {
       streak: parsed.streak || { count: 0, last: null },
     }
   } catch {
-    return { lessonsRead: {}, cards: {}, streak: { count: 0, last: null } }
+    return EMPTY()
   }
 }
 
+// In-memory cache keeps reads synchronous (components read it during render).
+let cache = readLocal()
+
+// ---- Subscriptions: let the UI re-render after async hydrate / changes ----
+const subscribers = new Set()
+function notify() {
+  for (const cb of subscribers) cb()
+}
+export function subscribeProgress(cb) {
+  subscribers.add(cb)
+  return () => subscribers.delete(cb)
+}
+
+function load() {
+  return cache
+}
+
+// Debounced push of the whole snapshot to the durable store.
+let pushTimer = null
+function pushToServer() {
+  if (pushTimer) clearTimeout(pushTimer)
+  pushTimer = setTimeout(() => {
+    fetch(API, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cache),
+    }).catch(() => {
+      /* offline or API down — localStorage still holds it; we'll resync later */
+    })
+  }, 400)
+}
+
 function save(state) {
+  cache = state
   try {
     localStorage.setItem(KEY, JSON.stringify(state))
   } catch {
     /* storage full or unavailable — fail quietly, progress is best-effort */
+  }
+  pushToServer()
+  notify()
+}
+
+// Pull durable state from the server on startup and adopt it as the truth.
+// Falls back silently to the localStorage cache if the API is unreachable.
+export async function hydrate() {
+  try {
+    const res = await fetch(API)
+    if (!res.ok) return
+    const server = await res.json()
+    cache = {
+      lessonsRead: server.lessonsRead || {},
+      cards: server.cards || {},
+      streak: server.streak || { count: 0, last: null },
+    }
+    try {
+      localStorage.setItem(KEY, JSON.stringify(cache))
+    } catch {
+      /* ignore cache write failure */
+    }
+    notify()
+  } catch {
+    /* API unreachable — keep using the local cache */
   }
 }
 
@@ -143,5 +208,8 @@ export function getStreak() {
 }
 
 export function resetAllProgress() {
+  cache = EMPTY()
   localStorage.removeItem(KEY)
+  fetch('/api/reset', { method: 'POST' }).catch(() => {})
+  notify()
 }

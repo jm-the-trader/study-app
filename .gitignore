@@ -19,3 +19,11 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+
+# SQLite progress database (local only — your personal study progress)
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
