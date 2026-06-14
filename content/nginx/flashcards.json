@@ -1,0 +1,150 @@
+[
+  {
+    "q": "What problem was Nginx designed to solve, and how?",
+    "a": "The C10k problem (10,000+ concurrent connections). It uses an event-driven, asynchronous model — a few worker processes each running an event loop — instead of one thread/process per connection.",
+    "tags": ["architecture"]
+  },
+  {
+    "q": "Why does an event loop handle far more concurrent connections than thread-per-connection?",
+    "a": "Most of a connection's life is spent waiting (network, slow clients, backends). An event loop only does work when a connection is ready, so a few workers juggle tens of thousands of mostly-idle connections cheaply.",
+    "tags": ["architecture"]
+  },
+  {
+    "q": "What's the difference between the Nginx master process and worker processes?",
+    "a": "The master (root) reads config and binds privileged ports but handles no traffic; workers (unprivileged, ~one per CPU core) do all request handling. This split enables zero-downtime reloads.",
+    "tags": ["architecture"]
+  },
+  {
+    "q": "What is the Nginx config context hierarchy?",
+    "a": "main → events / http → server → location. Outer settings are inherited by inner contexts unless overridden.",
+    "tags": ["config"]
+  },
+  {
+    "q": "How does Nginx pick which `server` block handles a request?",
+    "a": "By the `listen` port plus a matching `server_name` (against the Host header). Non-matching requests go to the default_server (or the first block on that port).",
+    "tags": ["config"]
+  },
+  {
+    "q": "In location matching, what's the precedence and the surprising rule about regex?",
+    "a": "Exact `=` wins first; then longest prefix (`^~` stops further checks); then regex (`~`/`~*`) — and the FIRST matching regex wins, so order matters; otherwise the longest plain prefix.",
+    "hint": "Order your regex blocks carefully.",
+    "tags": ["config"]
+  },
+  {
+    "q": "What's the difference between `root` and `alias`?",
+    "a": "`root` APPENDS the full URI to the path; `alias` REPLACES the matched location prefix. Mixing them up is the most common static-file 404.",
+    "tags": ["config", "static"]
+  },
+  {
+    "q": "What two commands form the safe edit→reload workflow?",
+    "a": "`sudo nginx -t` (test config syntax/validity) then `sudo nginx -s reload` (graceful, zero-downtime reload). Always test before reloading.",
+    "tags": ["config", "ops"]
+  },
+  {
+    "q": "What does `try_files $uri $uri/ =404;` do?",
+    "a": "Tries to serve the requested file, then the request as a directory (its index), and if neither exists returns 404. It's the workhorse of static serving.",
+    "tags": ["static"]
+  },
+  {
+    "q": "What single line makes a single-page app (SPA) work in Nginx?",
+    "a": "try_files $uri $uri/ /index.html; — real files are served directly, and any unmatched route falls back to index.html so the client-side router can handle it.",
+    "hint": "Without it, deep-link refreshes 404.",
+    "tags": ["static", "spa"]
+  },
+  {
+    "q": "How should you cache hashed assets vs. index.html, and why?",
+    "a": "Hashed/fingerprinted assets: cache immutable for ~1 year (the hash changes on content change). index.html: no-cache, so deploys take effect and don't reference deleted assets.",
+    "tags": ["static", "caching"]
+  },
+  {
+    "q": "What's the difference between a forward proxy and a reverse proxy?",
+    "a": "A forward proxy sits in front of clients and represents them to the internet (hides the client). A reverse proxy (Nginx) sits in front of servers and represents them to clients (hides the backend).",
+    "tags": ["proxy"]
+  },
+  {
+    "q": "Name three reasons to put Nginx as a reverse proxy in front of an app.",
+    "a": "TLS termination, load balancing, caching/compression, rate limiting, a stable public surface during redeploys, serving static files, and shielding the app from direct exposure.",
+    "tags": ["proxy"]
+  },
+  {
+    "q": "Which headers should a reverse proxy forward to the backend, and which prevents redirect loops?",
+    "a": "Host, X-Real-IP, X-Forwarded-For, and X-Forwarded-Proto. X-Forwarded-Proto (the original http/https) is what prevents infinite HTTPS redirect loops.",
+    "tags": ["proxy", "debugging"]
+  },
+  {
+    "q": "What's the `proxy_pass` trailing-slash rule?",
+    "a": "If proxy_pass ends with a path/slash, Nginx REPLACES the matched location prefix; with no path it passes the URI through unchanged. Mismatches cause backend 404s.",
+    "tags": ["proxy", "debugging"]
+  },
+  {
+    "q": "What extra directives does proxying WebSockets require?",
+    "a": "proxy_http_version 1.1; plus proxy_set_header Upgrade $http_upgrade; and proxy_set_header Connection \"upgrade\"; (and a long proxy_read_timeout).",
+    "tags": ["proxy"]
+  },
+  {
+    "q": "Compare round-robin, least_conn, and ip_hash load balancing.",
+    "a": "round-robin (default): even rotation. least_conn: send to the least-busy backend (good for uneven durations). ip_hash: pin each client IP to one backend (sticky sessions). Better long-term: make the app stateless.",
+    "tags": ["load-balancing"]
+  },
+  {
+    "q": "How does open-source Nginx do passive health checks?",
+    "a": "With `max_fails` and `fail_timeout` on an upstream server, e.g. `max_fails=3 fail_timeout=30s` — after 3 failures in 30s the backend is ejected for 30s. (Active probing needs Nginx Plus.)",
+    "tags": ["load-balancing"]
+  },
+  {
+    "q": "In Nginx HTTPS config, what must `ssl_certificate` point to and why?",
+    "a": "The FULL chain (leaf cert + intermediates), not just the leaf — otherwise some clients can't build a trust path even though browsers (which cache intermediates) may work. (PKI chain-of-trust.)",
+    "tags": ["https", "tls"]
+  },
+  {
+    "q": "How do you redirect HTTP to HTTPS in Nginx?",
+    "a": "A port-80 server block with: return 301 https://$host$request_uri; — a cheap permanent redirect that preserves the path.",
+    "tags": ["https"]
+  },
+  {
+    "q": "What does enabling `ssl_stapling` accomplish?",
+    "a": "OCSP stapling: Nginx fetches a signed revocation-status proof and staples it into the handshake, so visitors don't query the CA themselves (faster, no privacy leak). It's the PKI OCSP-stapling concept.",
+    "tags": ["https", "tls"]
+  },
+  {
+    "q": "What does HSTS do, and what does it protect against?",
+    "a": "Strict-Transport-Security tells browsers to use only HTTPS for your domain for a set duration, closing the gap where a first plain-http request could be hijacked before the redirect.",
+    "tags": ["https", "security"]
+  },
+  {
+    "q": "How do most sites obtain and renew TLS certs automatically?",
+    "a": "certbot (or acme.sh) via the ACME protocol / Let's Encrypt: it proves domain control, installs a free cert into the Nginx config, and auto-renews unattended (with a zero-downtime reload).",
+    "tags": ["https", "ops"]
+  },
+  {
+    "q": "What does proxy caching add over browser caching, and what's `proxy_cache_use_stale`?",
+    "a": "Proxy caching stores backend responses so a slow endpoint is computed once and served many times by Nginx. proxy_cache_use_stale serves the last good cached response during a backend error/timeout — staying up through an outage.",
+    "tags": ["caching", "performance"]
+  },
+  {
+    "q": "What governs Nginx's maximum concurrent connections?",
+    "a": "Roughly worker_processes × worker_connections. With `worker_processes auto` (one per core) and a few thousand worker_connections, one box holds tens of thousands of connections.",
+    "tags": ["performance"]
+  },
+  {
+    "q": "In `limit_req zone=api burst=20 nodelay;`, what do rate/burst/nodelay control?",
+    "a": "rate (in the zone, e.g. 10r/s) is the sustained allowed rate; burst absorbs short spikes (queued requests); nodelay serves the burst immediately instead of queuing it.",
+    "tags": ["security", "performance"]
+  },
+  {
+    "q": "Why might a security header set in an outer block disappear when you add a header in a `location`?",
+    "a": "`add_header` is NOT inherited into an inner block that defines any of its own add_header directives — the inner block must repeat the ones it still wants.",
+    "hint": "A classic missing-header gotcha.",
+    "tags": ["security", "debugging"]
+  },
+  {
+    "q": "Which log variable tells you whether slowness is your backend or Nginx?",
+    "a": "$upstream_response_time (vs $request_time). Add it to a custom log_format — if upstream time is high, the backend is slow, not the proxy.",
+    "tags": ["performance", "observability"]
+  },
+  {
+    "q": "List three quick Nginx hardening steps.",
+    "a": "server_tokens off (hide version); block dotfiles (location ~ /\\. { deny all; }); client_max_body_size limit; client/header timeouts; run workers unprivileged.",
+    "tags": ["security"]
+  }
+]

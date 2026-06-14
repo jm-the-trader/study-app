@@ -1,0 +1,8 @@
+{
+  "id": "nginx",
+  "title": "Nginx",
+  "emoji": "🌐",
+  "blurb": "The web server that runs much of the internet — its event-driven architecture, config model, serving static sites, reverse proxying, load balancing, HTTPS, and performance tuning.",
+  "accent": "#86efac",
+  "order": 2
+}
