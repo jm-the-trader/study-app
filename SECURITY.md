@@ -31,9 +31,12 @@ These environment variables let you relax the defaults **deliberately** — leav
 | `STUDYFORGE_ALLOWED_ORIGINS` | `http://localhost:5180,http://127.0.0.1:5180` | Comma-separated browser origins allowed to call the API directly (e.g. if you serve the built frontend from a different origin in production). |
 | `STUDYFORGE_DB` | `data/studyforge.db` | DB file location. |
 
+## Dependency audit
+
+`npm audit` is **clean (0 vulnerabilities)**. The previous esbuild/Vite dev-server advisory was resolved by upgrading to **Vite 8** (with `@vitejs/plugin-react@6`); a `shell-quote@^1.8.4` override clears the dev-only `concurrently` advisory. Keep this clean by running `npm audit` in CI.
+
 ## Known / accepted items
 
-- **Dev-server advisory (esbuild/Vite):** `npm audit` reports an esbuild dev-server issue reachable only while running `npm run dev`. The only fix is a Vite **major** upgrade (5 → 8), which is out of scope for a security patch and is tracked separately. It does **not** affect production builds (`npm run build`).
 - **No authentication by design:** appropriate for a local single-user tool. If you deploy this for multiple users or on a shared host, add authentication and TLS in front of the API and bind it accordingly.
 
 ## Reporting
