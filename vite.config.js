@@ -4,7 +4,12 @@ import react from '@vitejs/plugin-react'
 // StudyForge dev server. Honors the PORT env var (falls back to 5180) so it can
 // run alongside sibling projects without colliding. /api/* is proxied to the
 // local progress API (Express + SQLite) on port 5182.
+//
+// `base` is the public path the built app is served from. Locally it's '/';
+// for GitHub Pages project sites the deploy workflow sets VITE_BASE=/study-app/
+// so asset URLs resolve under https://<user>.github.io/study-app/.
 export default defineConfig({
+  base: process.env.VITE_BASE || '/',
   plugins: [react()],
   server: {
     port: Number(process.env.PORT) || 5180,

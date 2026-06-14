@@ -75,6 +75,10 @@ study-app/
 
 The browser keeps a fast `localStorage` cache and treats the SQLite-backed API as the source of truth: on startup it **hydrates** from `GET /api/state`, and every change writes localStorage immediately and pushes the full snapshot to `PUT /api/state` (debounced). The DB file (`data/studyforge.db`) is **gitignored** — your progress is yours and never committed. Vite proxies `/api/*` to the API (port 5182). If the API is down, the app still works from the local cache.
 
+### Security
+
+StudyForge is local and single-user, and ships **secure by default**: the API binds to **loopback only** (`127.0.0.1`), uses a **CORS allowlist** (no wildcard), rejects cross-origin writes, and never exposes filesystem paths. SQL is fully parameterized and lessons render without raw HTML. See [`SECURITY.md`](SECURITY.md) for the full threat model and the env vars (`API_HOST`, `STUDYFORGE_ALLOWED_ORIGINS`, …) you can set to deliberately relax the defaults.
+
 ---
 
 ## Adding a new topic (the 60-second version)
