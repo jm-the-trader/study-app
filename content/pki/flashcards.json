@@ -1,0 +1,145 @@
+[
+  {
+    "q": "What two core guarantees does PKI provide?",
+    "a": "Confidentiality (nobody in the middle can read the traffic) and authenticity (you're really talking to who you think you are).",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "In asymmetric cryptography, what is the defining property of the key pair?",
+    "a": "What one key locks, only the other can unlock. The public key is shared freely; the private key is kept secret.",
+    "hint": "Think of the padlock analogy.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "Why doesn't asymmetric cryptography alone stop a man-in-the-middle attack?",
+    "a": "Because an attacker can substitute their own public key for the real one. You need certificates (binding a key to an identity) and CAs to vouch for that binding.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "What is a digital certificate, in one sentence?",
+    "a": "A signed X.509 document binding a public key to a subject's identity, with a validity window, vouched for by a CA's signature.",
+    "tags": ["x509"]
+  },
+  {
+    "q": "Modern clients match a hostname against which certificate field — and which field do they IGNORE?",
+    "a": "They match the Subject Alternative Name (SAN). They ignore the Common Name (CN) for hostname matching. A cert with no SAN is effectively broken for HTTPS.",
+    "hint": "A very common 'works in curl, fails in browser' bug.",
+    "tags": ["x509"]
+  },
+  {
+    "q": "What's the difference between PEM and DER encoding?",
+    "a": "PEM is Base64 text wrapped in -----BEGIN/END----- markers. DER is the same data in raw binary. Both encode the same X.509 content.",
+    "tags": ["x509", "formats"]
+  },
+  {
+    "q": "What does a .pfx / .p12 file typically contain?",
+    "a": "A PKCS#12 bundle: the certificate + its private key + the chain, password-protected. The private key inside must be guarded.",
+    "tags": ["formats"]
+  },
+  {
+    "q": "What command dumps a certificate in human-readable form?",
+    "a": "openssl x509 -in cert.pem -noout -text",
+    "tags": ["openssl", "tools"]
+  },
+  {
+    "q": "Why is a root CA certificate self-signed, and why isn't that a problem?",
+    "a": "There's no authority above the root to vouch for it — it's a trust anchor. It's safe because you trust it explicitly: it's pre-installed in your device's trust store.",
+    "tags": ["trust"]
+  },
+  {
+    "q": "What is a trust store (root store)?",
+    "a": "The pre-installed set of root CA certificates a device/browser trusts out of the box (~100-150). All other trust chains back to one of these roots.",
+    "tags": ["trust"]
+  },
+  {
+    "q": "Describe the three tiers of a typical certificate chain.",
+    "a": "Root CA (self-signed, kept offline) → Intermediate CA (online, does daily signing) → Leaf/end-entity cert (the actual server). Trust flows downward.",
+    "tags": ["trust"]
+  },
+  {
+    "q": "Why issue leaf certs from an intermediate CA instead of directly from the root?",
+    "a": "It keeps the precious root key offline and rarely used. If an intermediate is compromised, you revoke just that intermediate — the root stays safe.",
+    "tags": ["trust"]
+  },
+  {
+    "q": "A site loads in Chrome but curl says 'unable to get local issuer certificate.' What's wrong?",
+    "a": "The server isn't sending the intermediate certificate(s). Browsers may cache intermediates, but other clients don't. Serve the full chain (leaf + intermediates).",
+    "hint": "The #1 real-world chain bug.",
+    "tags": ["trust", "debugging"]
+  },
+  {
+    "q": "What's the correct order of artifacts when creating a CA-signed certificate?",
+    "a": "Private key → CSR (Certificate Signing Request, contains your public key + identity) → Certificate (the CSR signed by the CA).",
+    "tags": ["openssl"]
+  },
+  {
+    "q": "Does the CA ever receive your private key?",
+    "a": "No. The CA only signs your CSR (which carries your public key). Your private key never leaves your control — that's the entire point.",
+    "tags": ["openssl"]
+  },
+  {
+    "q": "When signing a CSR with OpenSSL, how do you ensure the SAN ends up in the final certificate?",
+    "a": "Pass it at signing time via an extensions file: openssl x509 -req ... -extfile server.ext, where server.ext contains subjectAltName=DNS:...",
+    "tags": ["openssl", "debugging"]
+  },
+  {
+    "q": "How do you verify a private key actually matches a certificate?",
+    "a": "Compare the public-key hashes: derive the public key from both the .key and the .crt and SHA-256 them. They must be identical, or the cert won't work with that key.",
+    "tags": ["openssl", "debugging"]
+  },
+  {
+    "q": "Why do certificates expire on purpose?",
+    "a": "Expiry limits the blast radius of a leaked key, forces key rotation and config hygiene, and lets the ecosystem retire weak algorithms on a schedule.",
+    "tags": ["lifecycle"]
+  },
+  {
+    "q": "What protocol automates certificate issuance and renewal?",
+    "a": "ACME (popularized by Let's Encrypt). Clients like certbot, acme.sh, and Caddy prove domain control and renew unattended. Renew at ~2/3 of the lifetime.",
+    "tags": ["lifecycle"]
+  },
+  {
+    "q": "What's the difference between CRL and OCSP?",
+    "a": "CRL: the CA publishes a signed list of revoked serial numbers (clients download it). OCSP: the client queries the CA in real time for a single cert's status.",
+    "tags": ["revocation"]
+  },
+  {
+    "q": "What problem does OCSP stapling solve?",
+    "a": "Instead of each visitor querying the CA (a network round-trip and privacy leak), the server periodically fetches a signed OCSP response and staples it into the TLS handshake.",
+    "tags": ["revocation"]
+  },
+  {
+    "q": "Name three situations that require revoking a certificate before it expires.",
+    "a": "Private key exposed/leaked; cert mis-issued or contains wrong info; subject decommissioned or domain transferred; a client-cert holder (employee/device) departs.",
+    "tags": ["revocation"]
+  },
+  {
+    "q": "Why does TLS use BOTH asymmetric and symmetric cryptography?",
+    "a": "Asymmetric is used briefly to authenticate the server and agree on a fresh symmetric session key; symmetric (e.g. AES) then encrypts the actual data because it's fast.",
+    "tags": ["tls"]
+  },
+  {
+    "q": "During a handshake, why does the server send both a certificate AND a signature?",
+    "a": "The certificate binds a public key to the identity (vouched by a CA), but anyone can copy it. The signature, made with the private key, proves the server actually owns it.",
+    "tags": ["tls"]
+  },
+  {
+    "q": "What is Perfect Forward Secrecy and how does TLS 1.3 achieve it?",
+    "a": "Recording traffic today and stealing the private key later still won't decrypt it. Achieved via ephemeral key exchange (ECDHE) — a throwaway keypair per session creates the secret.",
+    "tags": ["tls"]
+  },
+  {
+    "q": "What is mutual TLS (mTLS)?",
+    "a": "Both sides present and verify certificates, not just the server. Used for service-to-service auth (service mesh), VPNs/device identity, and high-security APIs.",
+    "tags": ["tls"]
+  },
+  {
+    "q": "What is SNI and why does it matter?",
+    "a": "Server Name Indication: the hostname the client announces (in the clear) during the handshake so a server hosting many sites knows which certificate to present.",
+    "tags": ["tls"]
+  },
+  {
+    "q": "What is Certificate Transparency (CT) and how is it useful to you?",
+    "a": "Public CAs log every issued cert to append-only CT logs. You can watch (e.g. via crt.sh) for certs issued for your domains — an unexpected one is an early warning of compromise.",
+    "tags": ["lifecycle", "security"]
+  }
+]

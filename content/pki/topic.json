@@ -1,0 +1,8 @@
+{
+  "id": "pki",
+  "title": "PKI & Certificates",
+  "emoji": "🔐",
+  "blurb": "How public key infrastructure builds trust on the internet — keys, X.509 certificates, certificate authorities, and issuing real certs with OpenSSL.",
+  "accent": "#6ea8fe",
+  "order": 1
+}
