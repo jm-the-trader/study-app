@@ -1,0 +1,112 @@
+[
+  {
+    "q": "In one sentence, what does DNS do?",
+    "a": "It translates human-friendly names (example.com) into the IP addresses machines route to — the internet's phone book, and the first step of nearly every connection.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "How is a domain name structured, and which way is it read?",
+    "a": "Hierarchically, read right to left: root (trailing dot) → TLD (.com) → second-level domain (example) → subdomains (www, api). The full path is an FQDN. The hierarchy mirrors the lookup path.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "Why is DNS a distributed, delegated system?",
+    "a": "No single server or org could answer all queries or own all names. Authority is delegated down the tree (root → TLD registries → domain owners' name servers) and answers are cached everywhere, so there's no central bottleneck.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "What's the difference between a recursive resolver and an authoritative name server?",
+    "a": "A recursive resolver finds the answer for you (walking the hierarchy and caching results); authoritative name servers hold the real records for a zone and give definitive answers. Recursive = does the work; authoritative = owns the data.",
+    "tags": ["resolution"]
+  },
+  {
+    "q": "Walk the resolution of www.example.com from the root.",
+    "a": "Resolver asks the root → 'ask the .com TLD servers'; asks .com → 'ask example.com's name servers' (via NS records); asks those → returns the authoritative A record. Each tier delegates to the next; the resolver caches the result.",
+    "tags": ["resolution"]
+  },
+  {
+    "q": "What is a record's TTL and what does it control?",
+    "a": "Time To Live (seconds) — how long resolvers may cache the answer before re-checking. Low TTL = changes apply fast but more queries; high TTL = fewer queries but slower changes.",
+    "tags": ["resolution", "caching"]
+  },
+  {
+    "q": "What does 'DNS propagation' actually mean?",
+    "a": "It's just caches expiring. After you change a record, resolvers keep serving the old cached value until its TTL runs out — there's no global push. Lower the TTL before a planned change to shrink the window.",
+    "tags": ["caching"]
+  },
+  {
+    "q": "What's the difference between an A record and a CNAME?",
+    "a": "A maps a name directly to an IPv4 address (AAAA for IPv6). A CNAME aliases a name to another name, which is then resolved. CNAMEs can't coexist with other records for the same name and can't sit at the zone apex.",
+    "tags": ["records"]
+  },
+  {
+    "q": "Why can't you put a CNAME at the zone apex, and what's the workaround?",
+    "a": "The apex (bare example.com) must carry SOA and NS records, and a CNAME can't coexist with other records. Workaround: provider features like ALIAS/ANAME records or CNAME flattening.",
+    "tags": ["records"]
+  },
+  {
+    "q": "What does an MX record do, and what does its priority number mean?",
+    "a": "MX routes email — it lists the mail servers that accept mail for the domain. The priority number indicates preference: lower = more preferred (higher numbers are backups).",
+    "tags": ["records"]
+  },
+  {
+    "q": "What are TXT records commonly used for?",
+    "a": "Arbitrary text — most often domain ownership verification and email authentication: SPF (allowed senders), DKIM (signing keys), DMARC (policy). Misconfigured SPF/DKIM/DMARC is a top cause of mail going to spam.",
+    "tags": ["records"]
+  },
+  {
+    "q": "What do NS and SOA records do?",
+    "a": "NS records delegate a zone by naming its authoritative name servers (the delegation glue). SOA ('Start of Authority', one per zone) holds zone metadata: primary NS, admin email, serial number, and the negative-cache TTL.",
+    "tags": ["records"]
+  },
+  {
+    "q": "What is a CAA record and which course topic does it relate to?",
+    "a": "CAA restricts which Certificate Authorities may issue TLS certificates for the domain — a defense against mis-issuance, tying into the PKI topic's chain-of-trust concerns.",
+    "tags": ["records", "security"]
+  },
+  {
+    "q": "Distinguish the registrar, DNS host, and web host.",
+    "a": "Registrar: where you bought the domain (controls the delegating NS records at the parent). DNS host: where your zone records live and are served. Web host: where the app runs (the IP your A record points to). A break in any looks like 'DNS is down'.",
+    "tags": ["practice"]
+  },
+  {
+    "q": "Which two dig commands distinguish 'wrong record' from 'stale cache'?",
+    "a": "`dig @<authoritative-ns> <name>` shows the true current record (bypassing caches); a plain `dig <name>` shows what your resolver cached. If authoritative is correct but your resolver shows old data, it's a cache/TTL issue, not a wrong record.",
+    "tags": ["practice", "troubleshooting"]
+  },
+  {
+    "q": "What does `dig +trace` show?",
+    "a": "The full delegation walk from the root down (root → TLD → your name servers), so you can see exactly where resolution/delegation breaks — unlike a plain dig which just queries your resolver.",
+    "tags": ["practice", "troubleshooting"]
+  },
+  {
+    "q": "'I updated the record but it's not working' — what are the usual causes?",
+    "a": "(a) You edited the zone at a DNS host the registrar's NS records don't point to; (b) TTL/cache still serving the old value; (c) negative cache of an earlier NXDOMAIN. dig @authoritative vs dig (resolver) distinguishes them.",
+    "tags": ["troubleshooting"]
+  },
+  {
+    "q": "How does DNS-based load balancing/failover differ from an L4/L7 load balancer?",
+    "a": "DNS steers traffic by which answer it returns (round-robin, weighted, geo, health-checked failover) and never sits in the data path. Its limitation is TTL/caching — failover is only as fast as clients re-querying, so use low TTLs.",
+    "tags": ["platform"]
+  },
+  {
+    "q": "What is split-horizon DNS?",
+    "a": "Returning different answers based on who's asking — e.g. an internal name resolves to a private IP from inside the network and a public IP (or nothing) from outside. Used to keep internal services internal while sharing a naming scheme.",
+    "tags": ["platform"]
+  },
+  {
+    "q": "How is Kubernetes service discovery related to DNS?",
+    "a": "It IS DNS — CoreDNS gives every Service a name (e.g. db.prod.svc.cluster.local) that resolves to the Service's ClusterIP, which load-balances to healthy pods. Same hierarchy/resolution concepts, inside the cluster.",
+    "tags": ["platform"]
+  },
+  {
+    "q": "DNSSEC vs DoH/DoT — what distinct problem does each solve?",
+    "a": "DNSSEC cryptographically signs records so resolvers can verify answers are authentic/untampered (integrity, anti-spoofing) — not encryption. DoH/DoT encrypt the query on the wire (privacy/confidentiality). They're complementary; use both.",
+    "tags": ["security"]
+  },
+  {
+    "q": "Why is the registrar account a critical security asset?",
+    "a": "Whoever controls it controls the domain's NS delegation — and thus all its web traffic and email. Domain/registrar hijacking is a full takeover, so protect it with MFA and registrar lock.",
+    "tags": ["security"]
+  }
+]

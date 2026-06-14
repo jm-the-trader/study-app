@@ -1,0 +1,112 @@
+[
+  {
+    "q": "What does CI/CD automate, and why run it on every change?",
+    "a": "It automates the journey from commit to production (build, test, deploy) and runs on every change so problems surface immediately while changes are small — making releases routine, frequent, and low-risk instead of rare and scary.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "Distinguish Continuous Integration, Continuous Delivery, and Continuous Deployment.",
+    "a": "CI: auto build + test every change (catch integration/regressions early). Continuous Delivery: CI plus always keeping changes in a deployable state, with a human approving the prod release. Continuous Deployment: every passing change auto-releases to prod, no manual approval.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "What is the single step that differs between Continuous Delivery and Continuous Deployment?",
+    "a": "The final production release: Delivery keeps a human in the loop (push-button approval); Deployment removes it (fully automatic to prod). Both need strong automated tests.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "Why is CI a practice, not just a build server?",
+    "a": "It requires developers to actually integrate small changes into the shared mainline frequently (trunk-based development), behind a green build. A build server with long-lived branches isn't 'continuous' integration.",
+    "tags": ["ci"]
+  },
+  {
+    "q": "What is the test pyramid and how should it shape pipeline stages?",
+    "a": "Many fast unit tests at the base, fewer integration tests, very few slow end-to-end tests at the top. Order pipeline stages cheap/fast first (lint → build → unit → integration → e2e/scan) so failures surface in seconds — fail fast.",
+    "tags": ["ci"]
+  },
+  {
+    "q": "Why are slow and flaky CI pipelines dangerous beyond annoyance?",
+    "a": "Slow pipelines make people batch changes and stop integrating continuously; flaky tests train people to 'just re-run it', so they ignore real failures too. The result is an ignored pipeline that gives false confidence.",
+    "tags": ["ci"]
+  },
+  {
+    "q": "What does 'build once, promote the same artifact' mean and why?",
+    "a": "CI builds an immutable, versioned artifact (e.g. an image tagged with the Git SHA) once, then carries that exact artifact through every stage/environment. Rebuilding per environment means you didn't test what you shipped.",
+    "tags": ["ci", "cd"]
+  },
+  {
+    "q": "Name techniques to make CI fast.",
+    "a": "Caching dependencies/Docker layers between runs; running independent jobs in parallel (and sharding test suites); path filters/affected-target detection to run only what changed; matrix builds for parallel version/OS combos.",
+    "tags": ["ci"]
+  },
+  {
+    "q": "In GitHub Actions, what is the workflow → job → step hierarchy?",
+    "a": "A workflow (YAML in .github/workflows) is triggered by an event (push, pull_request, schedule, manual) and contains jobs; jobs run in parallel on fresh runners (order them with needs:); each job is a sequence of steps (run: commands or uses: Actions).",
+    "tags": ["github-actions"]
+  },
+  {
+    "q": "Jobs run on fresh runners — how do you pass a build output to a later job?",
+    "a": "Upload it as an artifact (actions/upload-artifact) in one job and download it (actions/download-artifact) in a later job linked via needs:. Caches (actions/cache) speed up inputs like dependencies across runs.",
+    "tags": ["github-actions"]
+  },
+  {
+    "q": "Secrets vs variables in GitHub Actions — when to use each?",
+    "a": "Secrets are encrypted and masked in logs — for credentials/tokens (${{ secrets.X }}). Variables are non-sensitive, visible config (${{ vars.X }}). Prefer OIDC over storing long-lived cloud secrets at all.",
+    "tags": ["github-actions", "security"]
+  },
+  {
+    "q": "What does promoting through environments (dev → staging → prod) look like done right?",
+    "a": "The same immutable artifact flows through each environment, with only config changing per environment. Production sits behind an approval gate (Continuous Delivery). You ship exactly what you tested.",
+    "tags": ["cd"]
+  },
+  {
+    "q": "Compare rolling, blue-green, and canary deployments.",
+    "a": "Rolling: replace instances gradually, no extra infra (k8s default). Blue-green: two full environments, test green then switch traffic at once — instant rollback, needs double capacity. Canary: send a small % of traffic to the new version, watch metrics, then ramp or roll back.",
+    "tags": ["cd", "strategies"]
+  },
+  {
+    "q": "When would you choose blue-green vs canary?",
+    "a": "Blue-green when you need instant cutover/rollback and can afford double capacity. Canary for high-traffic, high-stakes services where you want to validate against a small slice of real traffic (with good metrics) before full rollout.",
+    "tags": ["cd", "strategies"]
+  },
+  {
+    "q": "Why is rollback a first-class concern, and how is it done in Kubernetes?",
+    "a": "Things break in prod that passed every test, so rollback must be fast and practiced. In k8s, `kubectl rollout undo` scales the previous ReplicaSet back up — instant. Pair with post-deploy verification (golden signals) to detect bad deploys quickly.",
+    "tags": ["cd"]
+  },
+  {
+    "q": "What is GitOps and how does rollback work in it?",
+    "a": "Git is the single source of truth for desired state; an in-cluster controller (Argo CD/Flux) continuously reconciles the cluster to match. CI commits the new image tag to Git; the controller applies it. Rollback is a `git revert` — the controller reconciles back.",
+    "tags": ["cd", "gitops"]
+  },
+  {
+    "q": "Why is the CI/CD pipeline an especially high-value attack target?",
+    "a": "It's privileged, trusted automation with access to source, secrets, registries, and production. Compromising it (or a dependency/Action it runs) is a supply-chain attack — owning the pipeline means owning everything it ships.",
+    "tags": ["security"]
+  },
+  {
+    "q": "What does OIDC give you over a stored long-lived cloud secret?",
+    "a": "The pipeline exchanges a short-lived, workload-identity token with the cloud at runtime (tied to this repo/workflow), so there are no long-lived cloud keys to leak or rotate — the biggest CI/CD security upgrade for cloud deploys.",
+    "tags": ["security"]
+  },
+  {
+    "q": "Why pin third-party Actions/images to a commit SHA instead of a version tag?",
+    "a": "Tags are mutable — a hijacked or compromised action republished under the same tag would run inside your trusted pipeline and could exfiltrate secrets. Pinning to a full commit SHA freezes the exact code you reviewed.",
+    "tags": ["security"]
+  },
+  {
+    "q": "Give three CI/CD supply-chain hardening practices.",
+    "a": "Pin Actions/images to SHAs from trusted sources; scan & pin dependencies (fail on critical CVEs); restrict untrusted-PR/fork workflows from secrets; sign artifacts (cosign) + generate an SBOM; isolate/ephemeral self-hosted runners.",
+    "tags": ["security"]
+  },
+  {
+    "q": "How should workflow permissions and production deploys be locked down?",
+    "a": "Default the workflow token to read-only and grant only what each job needs; put production behind an Environment with required reviewers and environment-scoped secrets; enforce branch protection (PR review + green CI, no force-push to main).",
+    "tags": ["security"]
+  },
+  {
+    "q": "What are pipeline 'gates' and why encode them as required checks?",
+    "a": "Automated quality/security conditions a change must pass (tests, coverage, lint, no critical vulns, no secrets, policy-as-code like tfsec/OPA). Making them required status checks means quality and security are enforced automatically, not left to trust.",
+    "tags": ["best-practices"]
+  }
+]

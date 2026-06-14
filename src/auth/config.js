@@ -23,8 +23,14 @@ export const EXPECTED_HASH = (
   .trim()
   .toLowerCase()
 
-// Whether a gate is configured at all. (Always true here; kept for clarity.)
-export const GATE_ENABLED = Boolean(EXPECTED_HASH)
+// The password gate is OFF during local development (`npm run dev`, where
+// import.meta.env.DEV is true) and ON for production builds — which is what
+// GitHub Pages serves. So local dev needs no password; the deployed site does.
+// Override locally with VITE_FORCE_PASSWORD=true if you want to test the gate
+// via `npm run dev`.
+export const GATE_ENABLED =
+  Boolean(EXPECTED_HASH) &&
+  (!import.meta.env.DEV || import.meta.env.VITE_FORCE_PASSWORD === 'true')
 
 // localStorage key that remembers an unlocked device so you don't retype on
 // every visit (convenient on a phone). Stores the matched hash, so changing the

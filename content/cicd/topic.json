@@ -1,0 +1,8 @@
+{
+  "id": "cicd",
+  "title": "CI/CD",
+  "emoji": "🔁",
+  "blurb": "Automating the path from commit to production: CI vs CD, continuous integration in depth, building pipelines with GitHub Actions, deployment strategies (blue-green, canary, rolling) and rollback, plus pipeline security and supply-chain hardening.",
+  "accent": "#4ade80",
+  "order": 6.5
+}

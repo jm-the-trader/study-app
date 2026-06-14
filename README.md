@@ -2,7 +2,7 @@
 
 **Learn anything, one card at a time.** A content-driven study app: read bite-sized lessons, then lock the material in with **randomized, spaced-repetition flashcards**. Adding a new subject is as simple as dropping a folder of Markdown + JSON — no app code required, which makes it easy for both humans *and* AI assistants to extend.
 
-> Comes seeded with ten complete topics — a full **platform-engineering track**: PKI & Certificates · Nginx · Linux & systemd · Git Branching · Containers & Docker · Kubernetes & OpenShift · Terraform & IaC · Observability · ELK / Elastic Stack · Dynatrace.
+> Comes seeded with thirteen complete topics — a full **platform-engineering track**: PKI & Certificates · Nginx · Linux & systemd · Networking Fundamentals · DNS · Git Branching · Containers & Docker · Kubernetes & OpenShift · CI/CD · Terraform & IaC · Observability · ELK / Elastic Stack · Dynatrace.
 
 ---
 
@@ -55,8 +55,9 @@ study-app/
 │   │   ├── topic.json          ← metadata
 │   │   ├── lessons/*.md        ← ordered Markdown lessons (NN-slug.md)
 │   │   └── flashcards.json     ← [{ q, a, hint?, tags? }]
-│   ├── nginx/  linux/  git/  containers/  kubernetes/
-│   └── terraform/  observability/  elk/  dynatrace/
+│   ├── nginx/  linux/  networking/  dns/  git/  containers/
+│   ├── kubernetes/  cicd/  terraform/  observability/
+│   └── elk/  dynatrace/
 ├── server/
 │   └── index.js                ← progress API (Express + better-sqlite3)
 ├── data/                       ← SQLite database lives here (gitignored)
@@ -78,6 +79,8 @@ The browser keeps a fast `localStorage` cache and treats the SQLite-backed API a
 ### Security
 
 StudyForge is local and single-user, and ships **secure by default**: the API binds to **loopback only** (`127.0.0.1`), uses a **CORS allowlist** (no wildcard), rejects cross-origin writes, and never exposes filesystem paths. SQL is fully parameterized and lessons render without raw HTML. See [`SECURITY.md`](SECURITY.md) for the full threat model and the env vars (`API_HOST`, `STUDYFORGE_ALLOWED_ORIGINS`, …) you can set to deliberately relax the defaults.
+
+**Password gate:** the GitHub Pages deployment is protected by a client-side password gate (a deterrent, not real security — see the Deploy section). It is **disabled during local development** (`npm run dev`) so you never need a password locally, and **enabled in production builds** (what Pages serves). To test the gate locally, run `VITE_FORCE_PASSWORD=true npm run dev`.
 
 ---
 

@@ -1,0 +1,112 @@
+[
+  {
+    "q": "Why is networking built in layers?",
+    "a": "So each layer solves one problem and trusts the layer below without caring how it works (e.g. TCP doesn't care about WiFi vs fiber). This separation lets you change one layer without breaking the others.",
+    "tags": ["model"]
+  },
+  {
+    "q": "What do 'layer 3', 'layer 4', and 'layer 7' refer to?",
+    "a": "Layer 3 = IP / routing; layer 4 = TCP/UDP / ports; layer 7 = application (HTTP). Shorthand: a 'layer 4 load balancer' routes by IP/port, a 'layer 7 load balancer' routes by HTTP content.",
+    "tags": ["model"]
+  },
+  {
+    "q": "What is encapsulation, and what are the unit names per layer?",
+    "a": "Each layer wraps data in its own header going down the stack and strips it going up. Names: segment (TCP)/datagram (UDP) → packet (IP) → frame (Ethernet). Each layer reads only its own header.",
+    "tags": ["model"]
+  },
+  {
+    "q": "A single web request carries three addresses — which, and for what?",
+    "a": "A MAC address (this physical hop, L2), an IP address (the destination host, L3), and a port (the destination program, L4). Three addresses for three different jobs.",
+    "tags": ["model"]
+  },
+  {
+    "q": "In an IPv4 address + subnet mask, what are the two parts?",
+    "a": "A network portion (which network) and a host portion (which device on it). The subnet mask marks where the split is. Same-network hosts talk directly; other networks require a router.",
+    "tags": ["addressing"]
+  },
+  {
+    "q": "What does CIDR /N mean, and how does N relate to subnet size?",
+    "a": "/N = the number of leading network bits. Larger N = more network bits = fewer hosts (smaller subnet). Usable hosts ≈ 2^(32−N) − 2 (minus network + broadcast). Each ±1 in N halves/doubles the size.",
+    "tags": ["addressing", "cidr"]
+  },
+  {
+    "q": "How many usable hosts are in a /24 and a /26?",
+    "a": "/24 = 256 addresses, 254 usable. /26 = 64 addresses, 62 usable. (Subtract the network and broadcast addresses.)",
+    "tags": ["cidr"]
+  },
+  {
+    "q": "What are the private IPv4 ranges, and why do they matter?",
+    "a": "10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 — reserved for internal networks, not routable on the public internet (NAT bridges them). You pick these for VPCs/clusters and must keep them non-overlapping.",
+    "tags": ["addressing"]
+  },
+  {
+    "q": "What's the difference between a switch and a router?",
+    "a": "A switch forwards frames by MAC address WITHIN a local network (layer 2). A router forwards packets by IP address BETWEEN networks (layer 3). Your default gateway is the router that's your exit to other networks.",
+    "tags": ["routing"]
+  },
+  {
+    "q": "What does ARP do?",
+    "a": "Resolves a local IP address to its MAC address ('who has 192.168.1.10? tell me your MAC') so a frame can be addressed for local delivery. It only works within a single network.",
+    "tags": ["routing"]
+  },
+  {
+    "q": "What is the default route (gateway) for?",
+    "a": "The catch-all (0.0.0.0/0): any destination not matched by a more specific route is sent to the default gateway (router). Routing uses longest-prefix match — most specific route wins.",
+    "tags": ["routing"]
+  },
+  {
+    "q": "What does NAT do and what limitation does it introduce?",
+    "a": "Network Address Translation rewrites private source IPs to a shared public IP (and back for replies), letting many private hosts share one public address. Limitation: inbound connections don't work by default — you need port forwarding or a load balancer.",
+    "tags": ["nat"]
+  },
+  {
+    "q": "What is the TTL field in an IP packet for?",
+    "a": "Time To Live — each router decrements it; at 0 the packet is dropped (with an ICMP error). It prevents misrouted packets from looping forever, and traceroute exploits it to map the path.",
+    "tags": ["routing"]
+  },
+  {
+    "q": "What does a port identify, and what 4 values uniquely identify a TCP connection?",
+    "a": "A port (with the IP, forming a socket) identifies which program on the host. A connection is uniquely identified by the 4-tuple: source IP, source port, destination IP, destination port — which is how one server port handles thousands of clients.",
+    "tags": ["transport"]
+  },
+  {
+    "q": "Describe the TCP three-way handshake.",
+    "a": "SYN (client: let's connect, seq X) → SYN-ACK (server: ack X, my seq Y) → ACK (client: ack Y). It establishes a reliable connection before data flows, which adds one round-trip of latency. TLS then rides on top.",
+    "tags": ["transport", "tcp"]
+  },
+  {
+    "q": "TCP vs UDP — key differences and when to use each?",
+    "a": "TCP: connection-oriented, reliable, ordered, higher overhead — for web/SSH/databases/files. UDP: connectionless, best-effort, low latency — for DNS, voice/video, gaming, metrics (and QUIC/HTTP-3 build reliability on UDP).",
+    "tags": ["transport"]
+  },
+  {
+    "q": "Name the well-known ports for SSH, DNS, HTTP, HTTPS, and PostgreSQL.",
+    "a": "SSH 22, DNS 53, HTTP 80, HTTPS 443, PostgreSQL 5432. Ports 0–1023 are privileged (need root to bind).",
+    "tags": ["transport", "ports"]
+  },
+  {
+    "q": "How do you check what's listening on a host, and why is it the first connectivity check?",
+    "a": "`ss -tlnp` (TCP listening sockets, numeric, with process). It answers 'is my service even up and on the right interface?' — the first thing to verify when you get 'connection refused'.",
+    "tags": ["transport", "troubleshooting"]
+  },
+  {
+    "q": "What's the troubleshooting method when 'I can't connect'?",
+    "a": "Work UP the layers: IP/interface (ip addr) → routing/gateway (ip route, ping gw) → DNS (dig) → reachability (ping/traceroute) → port (ss/nc) → application (curl -v). Identify the broken layer before fixing.",
+    "tags": ["troubleshooting"]
+  },
+  {
+    "q": "`ping 1.1.1.1` works but `ping example.com` fails — what's wrong?",
+    "a": "The network/routing is fine; name resolution (DNS) is broken. Confirm with `dig example.com`. Pinging an IP vs a name is a fast DNS bisection.",
+    "tags": ["troubleshooting"]
+  },
+  {
+    "q": "What's the difference between 'connection refused' and 'connection timed out'?",
+    "a": "Refused = you reached the host but nothing is listening on that port (service down or bound to loopback only). Timed out = packets aren't getting through (a firewall dropping them, or a routing problem). Different root causes.",
+    "tags": ["troubleshooting"]
+  },
+  {
+    "q": "Which single command shows DNS resolution, TCP connect, TLS handshake, and the HTTP response?",
+    "a": "`curl -v <url>` — it traces name resolution, the TCP connection, the TLS handshake (Verify return code), and the full HTTP request/response, often revealing both the failing layer and the cause.",
+    "tags": ["troubleshooting"]
+  }
+]

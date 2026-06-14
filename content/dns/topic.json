@@ -1,0 +1,8 @@
+{
+  "id": "dns",
+  "title": "DNS",
+  "emoji": "📇",
+  "blurb": "The internet's directory: how names resolve to IPs through the DNS hierarchy and caching, the record types (A, CNAME, MX, TXT, NS…), TTL and propagation, dig-based troubleshooting, and DNS patterns for platform engineers.",
+  "accent": "#f472b6",
+  "order": 3.6
+}

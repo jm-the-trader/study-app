@@ -1,0 +1,8 @@
+{
+  "id": "networking",
+  "title": "Networking Fundamentals",
+  "emoji": "📡",
+  "blurb": "How machines actually talk: the layered model and encapsulation, IP addressing and CIDR subnets, routing/switching/NAT, TCP vs UDP and ports, and the troubleshooting toolkit (ping, traceroute, dig, ss, tcpdump, curl).",
+  "accent": "#2dd4bf",
+  "order": 3.5
+}
