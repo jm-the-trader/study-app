@@ -119,5 +119,50 @@
     "q": "What makes a good page (alert)?",
     "a": "It must be actionable and urgent — something a human must do right now. If there's nothing to do or it can wait until morning, make it a ticket or dashboard, not a page. Ruthlessly delete non-actionable alerts to fight fatigue.",
     "tags": ["alerting"]
+  },
+  {
+    "q": "Why shouldn't you scale Prometheus by enlarging its disk?",
+    "a": "A single Prometheus has no HA and limited retention. Scale by treating it as a collector and using remote_write to a long-term backend (Thanos/Cortex/Mimir) for durable storage, global query, and horizontal scale — plus recording rules to precompute.",
+    "tags": ["advanced", "scale"]
+  },
+  {
+    "q": "What is the cardinality trap in Prometheus?",
+    "a": "Every unique combination of label values is a separate time series. Putting unbounded values (user IDs, request IDs, raw URLs) in labels creates millions of series, exploding memory/cost and crashing the server. Labels are for bounded dimensions only.",
+    "tags": ["advanced", "cardinality"]
+  },
+  {
+    "q": "Where should a high-cardinality identifier like a user ID live?",
+    "a": "In traces and logs, not in metric labels. Metrics stay low-cardinality (status, method, route template); the specific identifiers belong in the per-request signals you can correlate to.",
+    "tags": ["advanced", "cardinality"]
+  },
+  {
+    "q": "Why must you aggregate histogram buckets before computing a quantile?",
+    "a": "histogram_quantile must run on summed bucket rates across instances: histogram_quantile(0.99, sum(rate(..._bucket[5m])) by (le)). Averaging pre-computed per-instance p99s is mathematically wrong. Buckets must also straddle your SLO target.",
+    "tags": ["advanced", "metrics"]
+  },
+  {
+    "q": "What are exemplars and why do they matter for correlation?",
+    "a": "Exemplars attach a sample trace ID to a metric data point, so a spike on a latency graph links directly to an example slow trace. Combined with trace IDs in logs, you can pivot metric → trace → logs in one click.",
+    "tags": ["advanced", "correlation"]
+  },
+  {
+    "q": "What is the OpenTelemetry Collector's pipeline, and what is tail sampling?",
+    "a": "receivers → processors → exporters, decoupling apps from the backend. Tail sampling decides AFTER seeing a whole trace — keep all errors and slow traces, drop boring fast ones — which head sampling (deciding up front) cannot do.",
+    "tags": ["advanced", "otel"]
+  },
+  {
+    "q": "Why is error-budget burn-rate alerting better than a static threshold?",
+    "a": "It pages on what users actually feel — how fast you're consuming the SLO error budget. Multi-window multi-burn-rate rules (a fast window for sharp outages, a slow one for slow burns) catch both without the false pages of 'CPU > 80%'.",
+    "tags": ["advanced", "alerting"]
+  },
+  {
+    "q": "What do Alertmanager grouping, routing, and inhibition do?",
+    "a": "Grouping bundles related alerts into one notification; routing sends by severity/team; inhibition suppresses downstream alerts when a parent fires (don't page for 50 services when the cluster is down). Silences mute during maintenance.",
+    "tags": ["advanced", "alerting"]
+  },
+  {
+    "q": "What does continuous profiling add as a 'fourth pillar'?",
+    "a": "Metrics/logs/traces show THAT and WHERE it's slow; continuous profiling (pprof, Pyroscope, Parca, eBPF) shows WHICH line of code burns CPU/memory in production — closing the gap from symptom to root cause.",
+    "tags": ["advanced", "profiling"]
   }
 ]

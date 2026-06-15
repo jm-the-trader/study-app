@@ -123,5 +123,65 @@
     "q": "Deployment vs DeploymentConfig in OpenShift — which should you use?",
     "a": "Prefer the standard Kubernetes Deployment for new work. DeploymentConfig is OpenShift's older object (with triggers/hooks) you'll still see in legacy projects.",
     "tags": ["openshift"]
+  },
+  {
+    "q": "Why does etcd run an odd number of members (3 or 5)?",
+    "a": "etcd replicates via the Raft consensus algorithm and needs a quorum (a majority) to accept writes. An odd count gives a clean majority and maximizes fault tolerance per node: 3 members tolerate 1 failure, 5 tolerate 2.",
+    "tags": ["advanced", "etcd"]
+  },
+  {
+    "q": "Before a risky cluster change, how do you make etcd recoverable, and how?",
+    "a": "Take a snapshot: `ETCDCTL_API=3 etcdctl snapshot save snap.db` (with the CA/cert/key). Restore with `etcdctl snapshot restore`. Losing etcd loses the whole cluster, so back it up before upgrades — managed clusters do this for you.",
+    "tags": ["advanced", "etcd"]
+  },
+  {
+    "q": "What are the scheduler's two phases when placing a Pod?",
+    "a": "Filtering — eliminate nodes the Pod can't run on (insufficient resources, untolerated taints, unmet affinity), leaving feasible nodes. Scoring — rank those feasible nodes and pick the highest. It's implemented as the pluggable Scheduling Framework.",
+    "tags": ["advanced", "scheduling"]
+  },
+  {
+    "q": "What's the difference between a taint and node affinity?",
+    "a": "A taint lives on the node and repels Pods — only Pods that tolerate it may land (the node opts out by default; used to reserve nodes). Node affinity lives on the Pod and attracts it toward matching nodes (the Pod opts in). They're inverses.",
+    "tags": ["advanced", "scheduling"]
+  },
+  {
+    "q": "What do the taint effects NoSchedule, PreferNoSchedule, and NoExecute do?",
+    "a": "NoSchedule: block new Pods that don't tolerate the taint. PreferNoSchedule: soft — avoid if possible. NoExecute: block new Pods AND evict already-running Pods that don't tolerate it.",
+    "tags": ["advanced", "scheduling"]
+  },
+  {
+    "q": "What does a PodDisruptionBudget protect against, and what kind of disruption?",
+    "a": "A PDB caps how many replicas can be down at once (minAvailable / maxUnavailable) during VOLUNTARY disruptions — `kubectl drain`, node upgrades, autoscaler scale-down must respect it. It does not protect against involuntary events like a node crash.",
+    "tags": ["advanced", "scheduling"]
+  },
+  {
+    "q": "Name the four RBAC object types and what each does.",
+    "a": "Role (namespaced) and ClusterRole (cluster-wide) list allowed verbs on resources. RoleBinding and ClusterRoleBinding grant a (Cluster)Role to subjects — users, groups, or ServiceAccounts. Pods authenticate as a ServiceAccount.",
+    "tags": ["advanced", "security", "rbac"]
+  },
+  {
+    "q": "Why can a NetworkPolicy be applied yet block nothing?",
+    "a": "NetworkPolicy is only enforced by a CNI that implements it (Calico, Cilium). Plugins like plain flannel ignore it — the object exists but no traffic is filtered. Always verify your CNI enforces policies before relying on them.",
+    "tags": ["advanced", "networking", "security"]
+  },
+  {
+    "q": "How do you create a default-deny-ingress for a namespace with NetworkPolicy?",
+    "a": "Apply a policy with an empty podSelector (selects all Pods) and policyTypes: [Ingress]. Because the model is allow-list, once a Pod is selected, any ingress not explicitly allowed is denied — so an empty allow-list denies all inbound.",
+    "tags": ["advanced", "networking", "security"]
+  },
+  {
+    "q": "Compare HPA, VPA, and the Cluster Autoscaler.",
+    "a": "HPA scales the replica count on metrics (CPU/memory/custom). VPA adjusts a Pod's CPU/memory requests/limits to fit usage. Cluster Autoscaler adds/removes nodes when Pods are unschedulable or nodes are underused. Don't point HPA and VPA at the same resource.",
+    "tags": ["advanced", "scaling"]
+  },
+  {
+    "q": "What is the difference between a CRD and an operator?",
+    "a": "A CustomResourceDefinition teaches the apiserver a new object kind — on its own it just stores YAML. An operator = CRD + a custom controller that reconciles it, encoding operational knowledge (provision, back up, fail over) for a stateful app.",
+    "tags": ["advanced", "extensibility"]
+  },
+  {
+    "q": "What's the difference between a mutating and a validating admission webhook?",
+    "a": "Both run after authn/authz but before the object is persisted. Mutating webhooks modify the object (inject a sidecar, set defaults); validating webhooks accept or reject it (enforce policy, e.g. ban :latest images). Mutating runs first.",
+    "tags": ["advanced", "extensibility", "security"]
   }
 ]

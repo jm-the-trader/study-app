@@ -114,5 +114,50 @@
     "q": "What is a 'mapping explosion' and why avoid it?",
     "a": "When dynamic mapping creates thousands of fields from high-cardinality/arbitrary JSON keys, destabilizing the cluster (memory/cluster-state bloat). Constrain dynamic mapping and define mappings deliberately.",
     "tags": ["operations"]
+  },
+  {
+    "q": "text vs keyword field types — when do you use each?",
+    "a": "text is analyzed into tokens for full-text search (log messages, prose). keyword is stored whole for exact match, sorting, and aggregations (status, host, level). Most strings default to a multi-field giving both.",
+    "tags": ["advanced", "mappings"]
+  },
+  {
+    "q": "Why are explicit mappings safer than dynamic mapping in production?",
+    "a": "Dynamic mapping infers types from the first document — a number arriving as a string locks the field to text, and arbitrary keys cause a mapping explosion that destabilizes the cluster. Use explicit mappings via index/component templates.",
+    "tags": ["advanced", "mappings"]
+  },
+  {
+    "q": "Walk text through an analyzer. Why does searching 'running' match 'ran'?",
+    "a": "A text field passes through char filter → tokenizer (split into terms) → token filters (lowercase, stop-words, stemming, synonyms). The stemmer normalizes 'running' and 'ran' to the same root, so they match.",
+    "tags": ["advanced", "analyzers"]
+  },
+  {
+    "q": "What are searchable snapshots and what problem do they solve?",
+    "a": "They let frozen-tier data live in cheap object storage (S3) while remaining directly queryable. This makes long retention affordable — keep months of logs at object-storage prices instead of SSD, at the cost of slower queries.",
+    "tags": ["advanced", "tiers"]
+  },
+  {
+    "q": "Describe the hot/warm/cold/frozen data tiers.",
+    "a": "Hot: fast SSD for active writes + recent queries. Warm: cheaper disk, read-only. Cold: slower/denser, infrequent access. Frozen: object storage via searchable snapshots. ILM moves indices through tiers as they age to match hardware to value.",
+    "tags": ["advanced", "tiers"]
+  },
+  {
+    "q": "What's the difference between Cross-Cluster Search and Cross-Cluster Replication?",
+    "a": "CCS queries multiple clusters from one place (a global view without merging them). CCR replicates indices from a leader cluster to followers — for disaster recovery or serving reads closer to a region.",
+    "tags": ["advanced", "scale"]
+  },
+  {
+    "q": "When would you use a pipeline aggregation?",
+    "a": "When you need to compute on the OUTPUT of another aggregation — e.g. a derivative (rate of change), moving average, or cumulative sum over a date histogram — to turn counts into trends.",
+    "tags": ["advanced", "aggregations"]
+  },
+  {
+    "q": "Why prefer filter context over query context when you don't need ranking?",
+    "a": "Filter context answers a yes/no match, is cacheable, and skips relevance scoring — so it's faster and cached. Query context computes a relevance score, which you only need for full-text ranking.",
+    "tags": ["advanced", "performance"]
+  },
+  {
+    "q": "What do field-level and document-level security enable?",
+    "a": "Field-level security hides specific fields (e.g. SSN) from a role; document-level security restricts a role to docs matching a query (e.g. its own team's). Together they let one index safely serve multiple tenants.",
+    "tags": ["advanced", "security"]
   }
 ]

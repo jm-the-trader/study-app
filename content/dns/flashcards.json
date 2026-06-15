@@ -108,5 +108,50 @@
     "q": "Why is the registrar account a critical security asset?",
     "a": "Whoever controls it controls the domain's NS delegation — and thus all its web traffic and email. Domain/registrar hijacking is a full takeover, so protect it with MFA and registrar lock.",
     "tags": ["security"]
+  },
+  {
+    "q": "What guarantee does DNSSEC provide, and what does it NOT provide?",
+    "a": "DNSSEC provides authenticity and integrity — records are signed (RRSIG) and verifiable, preventing forgery/cache poisoning. It does NOT provide confidentiality (answers aren't encrypted) and doesn't help unsigned zones.",
+    "tags": ["advanced", "dnssec"]
+  },
+  {
+    "q": "Walk the DNSSEC chain of trust. What does the DS record do?",
+    "a": "Each zone signs records (RRSIG) verified by its DNSKEY. The parent publishes a DS record (a hash of the child's key), so .com vouches for example.com and root vouches for .com. The root key is the trust anchor.",
+    "tags": ["advanced", "dnssec"]
+  },
+  {
+    "q": "Compare DoT and DoH.",
+    "a": "Both encrypt the DNS transport for privacy. DoT (DNS over TLS) uses port 853 — easy for admins to identify. DoH (DNS over HTTPS) uses 443, looking like normal web traffic — harder to block. Complementary to DNSSEC (authenticity).",
+    "tags": ["advanced", "privacy"]
+  },
+  {
+    "q": "How does anycast make 8.8.8.8 'close' to everyone?",
+    "a": "The same IP is advertised from many locations via BGP; the network routes each user to the nearest instance. It gives global low latency and absorbs DDoS by spreading load — used by big resolvers and CDNs.",
+    "tags": ["advanced", "routing"]
+  },
+  {
+    "q": "Why does TTL matter for DNS-based failover, and what's the downside of a very short TTL?",
+    "a": "Cached clients keep the old answer until the TTL expires, so a 300s TTL delays failover up to 5 minutes. Too-short TTLs speed failover but hammer your authoritative servers with queries.",
+    "tags": ["advanced", "routing"]
+  },
+  {
+    "q": "What does EDNS0 add, and why is it needed for DNSSEC?",
+    "a": "EDNS0 negotiates larger UDP payloads (past the old 512-byte cap) and carries options like client-subnet. DNSSEC responses are large, so EDNS0 is effectively required for it to work over UDP.",
+    "tags": ["advanced", "edns"]
+  },
+  {
+    "q": "What is a CAA record for?",
+    "a": "A CAA record declares which Certificate Authorities are allowed to issue certificates for your domain; compliant CAs must honor it — limiting mis-issuance (ties to PKI).",
+    "tags": ["advanced", "security"]
+  },
+  {
+    "q": "What do NSEC/NSEC3 records authenticate in DNSSEC?",
+    "a": "They authenticate non-existence — proving 'there is genuinely no such name/record' — so an attacker can't forge a 'does not exist' reply.",
+    "tags": ["advanced", "dnssec"]
+  },
+  {
+    "q": "Name two DNS-based traffic-routing strategies beyond a static A record.",
+    "a": "GeoDNS/latency-based routing (return the nearest/fastest region), weighted routing (split traffic by percentage for canaries/AB), and health-checked failover (only hand out IPs of healthy endpoints).",
+    "tags": ["advanced", "routing"]
   }
 ]

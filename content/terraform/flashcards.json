@@ -109,5 +109,50 @@
     "q": "How should secrets be handled in Terraform?",
     "a": "Never hardcode them in .tf or commit secret tfvars. Inject via TF_VAR_ env vars or a secrets manager (Vault/cloud), mark variables/outputs sensitive=true, and encrypt/lock down state (secrets land in state as plaintext).",
     "tags": ["security", "best-practices"]
+  },
+  {
+    "q": "Why does for_each usually beat count for a collection you'll modify?",
+    "a": "count indexes by position, so deleting a middle element shifts every later index and Terraform destroys/recreates them all. for_each keys by a stable value (map/set), so removing one item only affects that key.",
+    "tags": ["advanced", "meta-args"]
+  },
+  {
+    "q": "What does a dynamic block do?",
+    "a": "It generates a variable number of repeated nested blocks (e.g. security-group ingress rules) by iterating with for_each inside a resource. Use sparingly — a few explicit blocks are often clearer than a clever loop.",
+    "tags": ["advanced", "meta-args"]
+  },
+  {
+    "q": "Name three lifecycle arguments and what each solves.",
+    "a": "create_before_destroy (build the replacement before tearing down the old — no downtime), prevent_destroy (guard a production resource), ignore_changes (stop fighting external mutations like an autoscaler), replace_triggered_by (force replace when a referenced thing changes).",
+    "tags": ["advanced", "lifecycle"]
+  },
+  {
+    "q": "How do you rename/move a resource without destroying it?",
+    "a": "Use a `moved` block declaring old → new address; Terraform updates state on the next apply with no destroy. It's the reviewable, repeatable replacement for the imperative `terraform state mv`.",
+    "tags": ["advanced", "refactoring"]
+  },
+  {
+    "q": "What does an import block do, and why is it better than `terraform import`?",
+    "a": "An import block brings existing hand-created infrastructure under management declaratively (and plan -generate-config-out can scaffold the HCL). Being in code, it's version-controlled and code-reviewed, unlike the one-off imperative command.",
+    "tags": ["advanced", "refactoring"]
+  },
+  {
+    "q": "Why commit the .terraform.lock.hcl lockfile?",
+    "a": "It pins exact provider versions so every local run and CI uses identical providers — reproducible plans/applies. Pair with required_version and version constraints.",
+    "tags": ["advanced", "state"]
+  },
+  {
+    "q": "Why isolate Terraform state per environment?",
+    "a": "Separate backends/keys (or workspaces) per environment ensure a prod apply can never touch dev, and keep blast radius and plan times small. One giant monolithic state is slow and risky.",
+    "tags": ["advanced", "state"]
+  },
+  {
+    "q": "What is policy as code in Terraform, and how does it fit CI?",
+    "a": "Tools like Sentinel, OPA/Conftest, or Checkov/tfsec evaluate the plan automatically and block violations (e.g. no 0.0.0.0/0 SSH, required tags, approved instance types) in CI — automated governance complementing human review.",
+    "tags": ["advanced", "policy"]
+  },
+  {
+    "q": "How do you test a Terraform module?",
+    "a": "`terraform test` (.tftest.hcl) runs plan/apply assertions against the module (real or mocked providers); Terratest (Go) provisions real infra, asserts, and tears down. Add precondition/postcondition blocks and variable validation to fail fast on bad input.",
+    "tags": ["advanced", "testing"]
   }
 ]

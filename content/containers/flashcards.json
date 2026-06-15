@@ -124,5 +124,50 @@
     "q": "Name three container supply-chain security practices.",
     "a": "Scan images for CVEs in CI (Trivy/Grype/scout); sign images with cosign and verify at deploy; generate an SBOM; pin trusted base images by digest and rebuild regularly to pick up patches.",
     "tags": ["security"]
+  },
+  {
+    "q": "There's no 'create container' syscall — so what actually starts a container?",
+    "a": "The runtime calls clone()/unshare() with namespace flags, sets up cgroups, pivots the root filesystem, applies a seccomp filter, then exec's your binary. A container is a convention over a normal process, not a kernel object.",
+    "tags": ["advanced", "internals"]
+  },
+  {
+    "q": "Name the Linux namespaces and what each isolates.",
+    "a": "PID (process IDs), mount (filesystem mounts), network (interfaces/ports), UTS (hostname), IPC (shared memory), user (UID/GID mapping), cgroup (cgroup view). Namespaces control what a process can SEE; cgroups control what it can USE.",
+    "tags": ["advanced", "internals"]
+  },
+  {
+    "q": "What three specs does the OCI define, and why do they matter?",
+    "a": "image-spec (on-disk image format), runtime-spec (how to run a bundle; runc is the reference), distribution-spec (registry API). They decouple tools so an image built by Docker runs under Podman/containerd anywhere.",
+    "tags": ["advanced", "oci"]
+  },
+  {
+    "q": "What does a user namespace protect against that a non-root USER directive doesn't?",
+    "a": "A user namespace maps container UID 0 to an unprivileged host UID, so 'root in the container' is 'nobody on the host' — limiting damage from an escape. USER only sets the in-container user. Use both layers.",
+    "tags": ["advanced", "security"]
+  },
+  {
+    "q": "What is the typical container runtime stack on a node?",
+    "a": "kubelet/Docker → containerd (via CRI) → runc → your process. containerd manages images and lifecycle; runc does the low-level clone()/namespace/cgroup setup.",
+    "tags": ["advanced", "internals"]
+  },
+  {
+    "q": "When would you use gVisor or Kata instead of plain runc?",
+    "a": "For hostile or multi-tenant workloads where namespace isolation isn't enough. gVisor runs a user-space kernel intercepting syscalls; Kata runs each container in a lightweight micro-VM — both add a much harder escape boundary at some performance cost.",
+    "tags": ["advanced", "security"]
+  },
+  {
+    "q": "What do seccomp and LSMs (AppArmor/SELinux) each do for a container?",
+    "a": "seccomp is a syscall allow/deny filter shrinking the attack surface. AppArmor (path-based) and SELinux (label-based) are mandatory access controls confining what files/operations the container can touch even if compromised.",
+    "tags": ["advanced", "security"]
+  },
+  {
+    "q": "What problems do BuildKit cache mounts and secret mounts solve?",
+    "a": "Cache mounts persist a dependency cache across builds (not baked into the image) for near-instant rebuilds. Secret mounts let a build use a credential without baking it into a layer — proper build-time secret handling.",
+    "tags": ["advanced", "builds"]
+  },
+  {
+    "q": "Why use a distroless or scratch base image?",
+    "a": "No shell, package manager, or extra binaries means a minimal attack surface and smaller image — fewer CVEs and nothing for an attacker to pivot with. Pair with an SBOM and image signing.",
+    "tags": ["advanced", "security"]
   }
 ]

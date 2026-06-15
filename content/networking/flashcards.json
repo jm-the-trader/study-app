@@ -108,5 +108,50 @@
     "q": "Which single command shows DNS resolution, TCP connect, TLS handshake, and the HTTP response?",
     "a": "`curl -v <url>` — it traces name resolution, the TCP connection, the TLS handshake (Verify return code), and the full HTTP request/response, often revealing both the failing layer and the cause.",
     "tags": ["troubleshooting"]
+  },
+  {
+    "q": "Distinguish TCP flow control from congestion control.",
+    "a": "Flow control protects the RECEIVER: it advertises a window of how much it can buffer, and the sender won't exceed it. Congestion control protects the NETWORK: the sender grows/backs off its congestion window based on loss/RTT (CUBIC, BBR).",
+    "tags": ["advanced", "tcp"]
+  },
+  {
+    "q": "What is an MTU black hole and a common fix?",
+    "a": "When packets exceed the path MTU and Path MTU Discovery is broken (ICMP 'fragmentation needed' blocked), small packets pass but large transfers hang. Fix: lower the TCP MSS (MSS clamping) so segments fit, common on tunnels/overlays.",
+    "tags": ["advanced", "tcp"]
+  },
+  {
+    "q": "Why does an overlay network shrink the usable MTU?",
+    "a": "Encapsulation (e.g. VXLAN wrapping frames in UDP) adds outer headers, so fewer bytes remain for payload on the same physical 1500-byte MTU. Failing to account for it causes MTU black holes in container/cloud networks.",
+    "tags": ["advanced", "overlay"]
+  },
+  {
+    "q": "L4 vs L7 load balancing — what does each see and do?",
+    "a": "L4 sees IPs+ports: fast, protocol-agnostic forwarding (IPVS, NLB, Nginx stream). L7 parses the application (HTTP headers/paths/cookies): path routing, TLS termination, retries (Nginx/Envoy, ALB). K8s Services are L4; Ingress is L7.",
+    "tags": ["advanced", "loadbalancing"]
+  },
+  {
+    "q": "What does encapsulation (VXLAN) achieve, and how does it relate to a K8s CNI?",
+    "a": "It wraps inner packets in an outer packet so a virtual network can span many physical hosts — giving every workload a routable IP. This is the CNI's job: Calico (L3 routing/BGP) or Cilium (eBPF) give Pods IPs and enforce NetworkPolicy.",
+    "tags": ["advanced", "overlay"]
+  },
+  {
+    "q": "What do iptables/nftables and conntrack do on the packet path?",
+    "a": "They sit on netfilter hooks every packet traverses. iptables/nftables define filtering and NAT rules; conntrack tracks each connection's state so replies are auto-allowed (stateful firewalling) and NAT rewrites both directions consistently.",
+    "tags": ["advanced", "netfilter"]
+  },
+  {
+    "q": "When a Kubernetes Service IP isn't reachable, what are you really debugging?",
+    "a": "The netfilter machinery that implements Service VIPs — kube-proxy's iptables/IPVS rules (or Cilium's eBPF programs) plus conntrack state — not a physical interface.",
+    "tags": ["advanced", "netfilter"]
+  },
+  {
+    "q": "What is QUIC / HTTP/3 and what's an operational caveat?",
+    "a": "QUIC runs over UDP, folding in TLS 1.3, multiplexed streams (no head-of-line blocking), and loss recovery, with 0-RTT reconnects. HTTP/3 is HTTP over QUIC. Caveat: being UDP, TCP-only firewalls/middleboxes may interfere.",
+    "tags": ["advanced", "protocols"]
+  },
+  {
+    "q": "Why do thousands of TIME_WAIT sockets on a busy proxy appear, and should you worry?",
+    "a": "After closing, the initiator holds the socket ~2×MSL so late packets can't corrupt a new connection — normal on a high-throughput proxy, not a leak. Reduce it with connection reuse/keepalive, not by disabling TIME_WAIT.",
+    "tags": ["advanced", "tcp"]
   }
 ]

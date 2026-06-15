@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getTopic, ALL_FLASHCARDS } from '../content/loadContent.js'
 import { orderForSession, gradeCard, getCardStats } from '../lib/progress.js'
@@ -21,6 +21,36 @@ export default function FlashcardsPage() {
     },
     [deck],
   )
+
+  // Free navigation between cards (does not grade — just moves the cursor).
+  const goNext = useCallback(() => {
+    setSession((s) => (s && s.index < s.cards.length ? { ...s, index: s.index + 1, flipped: false, lastMsg: '' } : s))
+  }, [])
+  const goPrev = useCallback(() => {
+    setSession((s) => (s && s.index > 0 ? { ...s, index: s.index - 1, flipped: false, lastMsg: '' } : s))
+  }, [])
+  const toggleFlip = useCallback(() => {
+    setSession((s) => (s ? { ...s, flipped: !s.flipped } : s))
+  }, [])
+
+  // Keyboard shortcuts during an active session: ← previous, → next, Space/Enter flip.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!session || session.index >= session.cards.length) return
+      if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        goNext()
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        goPrev()
+      } else if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault()
+        toggleFlip()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [session, goNext, goPrev, toggleFlip])
 
   if (deck.length === 0) {
     return (
@@ -73,12 +103,22 @@ export default function FlashcardsPage() {
 
       {session.lastMsg && <p className="text-center text-sm text-brand-soft">{session.lastMsg}</p>}
 
-      <Flashcard
-        key={card.id}
-        card={card}
-        flipped={session.flipped}
-        onFlip={() => setSession((s) => ({ ...s, flipped: !s.flipped }))}
-      />
+      <div className="flex items-center gap-2 sm:gap-3">
+        <NavArrow
+          dir="prev"
+          onClick={goPrev}
+          disabled={session.index === 0}
+          title="Previous card (←)"
+        />
+        <div className="flex-1">
+          <Flashcard key={card.id} card={card} flipped={session.flipped} onFlip={toggleFlip} />
+        </div>
+        <NavArrow dir="next" onClick={goNext} title="Next card (→)" />
+      </div>
+
+      <p className="text-center text-xs text-slate-600">
+        Use <Kbd>←</Kbd> <Kbd>→</Kbd> to move between cards · <Kbd>Space</Kbd> to flip
+      </p>
 
       {session.flipped ? (
         <div>
@@ -132,6 +172,29 @@ function Flashcard({ card, flipped, onFlip }) {
         </div>
       </div>
     </div>
+  )
+}
+
+function NavArrow({ dir, onClick, disabled, title }) {
+  const isPrev = dir === 'prev'
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-label={isPrev ? 'Previous card' : 'Next card'}
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xl text-slate-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-white/5"
+    >
+      {isPrev ? '‹' : '›'}
+    </button>
+  )
+}
+
+function Kbd({ children }) {
+  return (
+    <kbd className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">
+      {children}
+    </kbd>
   )
 }
 

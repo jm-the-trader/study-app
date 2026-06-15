@@ -146,5 +146,50 @@
     "q": "List three quick Nginx hardening steps.",
     "a": "server_tokens off (hide version); block dotfiles (location ~ /\\. { deny all; }); client_max_body_size limit; client/header timeouts; run workers unprivileged.",
     "tags": ["security"]
+  },
+  {
+    "q": "When do you use the Nginx stream block instead of http?",
+    "a": "The stream {} block proxies/load-balances raw TCP/UDP (databases, MQTT, SMTP, TLS passthrough by SNI). You use it for non-HTTP services — but give up header-aware L7 features that live in http {}.",
+    "tags": ["advanced", "proxying"]
+  },
+  {
+    "q": "Why does upstream keepalive matter?",
+    "a": "Without it, Nginx opens a new TCP (and TLS) connection to the backend per request. A `keepalive` count plus HTTP/1.1 with an empty Connection header pools connections — a large latency and CPU win.",
+    "tags": ["advanced", "proxying"]
+  },
+  {
+    "q": "Why can proxy_pass to a dynamic backend go stale, and how do you fix it?",
+    "a": "By default Nginx resolves proxy_pass hostnames once at startup, so changing backend IPs (Kubernetes/cloud) go stale. Set a `resolver` and pass the host via a variable to force runtime DNS re-resolution.",
+    "tags": ["advanced", "proxying"]
+  },
+  {
+    "q": "How does auth_request centralize authentication?",
+    "a": "auth_request fires an internal subrequest to an auth service before serving the real request; a 2xx allows it, 401/403 blocks it. This puts authn/authz at the edge — the pattern behind ingress-nginx external auth and SSO.",
+    "tags": ["advanced", "auth"]
+  },
+  {
+    "q": "What is microcaching and what does it achieve?",
+    "a": "Caching dynamic responses for a tiny window (e.g. 1s). Under load that means at most one backend hit per second per resource while everyone else is served from cache — often a 10–100× backend offload with negligible staleness.",
+    "tags": ["advanced", "caching"]
+  },
+  {
+    "q": "What do proxy_cache_lock and proxy_cache_use_stale prevent?",
+    "a": "proxy_cache_lock collapses concurrent cache misses into ONE backend request (prevents a cache stampede/thundering herd when a hot key expires). use_stale keeps serving stale content while refreshing or when the backend errors.",
+    "tags": ["advanced", "caching"]
+  },
+  {
+    "q": "Why does Nginx advise against `if` inside a location block?",
+    "a": "`if` inside location is evaluated in surprising ways ('if is evil') for anything beyond return/rewrite. Prefer `map`, `try_files`, or location matching to express conditional logic safely.",
+    "tags": ["advanced", "config"]
+  },
+  {
+    "q": "What does the `map` directive do?",
+    "a": "It efficiently builds a variable from another value via a hash lookup — great for routing, feature flags, or conditional headers without using `if`.",
+    "tags": ["advanced", "config"]
+  },
+  {
+    "q": "How can Nginx help adopt gRPC or HTTP/2/3 without changing the app?",
+    "a": "grpc_pass proxies gRPC (HTTP/2 end to end), and Nginx can terminate HTTP/2 (and HTTP/3/QUIC in recent builds) for clients while talking HTTP/1.1 or HTTP/2 to backends — adopting new protocols at the edge.",
+    "tags": ["advanced", "protocols"]
   }
 ]
