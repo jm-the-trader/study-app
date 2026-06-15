@@ -125,5 +125,55 @@
     "q": "What does `git worktree` let you do?",
     "a": "Check out another branch in a separate directory sharing the same repo — work on a hotfix or review a PR without stashing or disturbing your current branch.",
     "tags": ["tools"]
+  },
+  {
+    "q": "What are Git's four object types?",
+    "a": "blob (file bytes), tree (a directory listing of names → blob/tree hashes + modes), commit (a snapshot: root tree + parent(s) + metadata), and tag (annotated tag pointing at an object). Each is named by the hash of its content.",
+    "tags": ["advanced", "internals"]
+  },
+  {
+    "q": "A commit stores a snapshot, not a diff — so what does it point to?",
+    "a": "A commit points to one root TREE (the full snapshot of the project) plus its parent commit(s). Diffs aren't stored; they're computed on demand between trees.",
+    "tags": ["advanced", "internals"]
+  },
+  {
+    "q": "Why is creating a branch essentially free? What is a branch on disk?",
+    "a": "A branch is just a ref — a small file under .git/refs/ containing a commit hash (~41 bytes). Creating one writes that file; moving it (e.g. reset) rewrites the pointer. No content is copied.",
+    "tags": ["advanced", "internals"]
+  },
+  {
+    "q": "What does content-addressing (hashing by content) give Git?",
+    "a": "Identical content stores once (deduplication), integrity (a changed byte changes the hash), and the ability to verify history — every object's name IS the hash of its bytes.",
+    "tags": ["advanced", "internals"]
+  },
+  {
+    "q": "What is a refspec and how does it explain tracking branches?",
+    "a": "A refspec (+src:dst) maps refs between repos. `git fetch origin` uses +refs/heads/*:refs/remotes/origin/*, so remote branches become origin/* tracking refs. You can push to a differently-named branch with `git push origin local:remote`.",
+    "tags": ["advanced", "remotes"]
+  },
+  {
+    "q": "When would you use partial clone or sparse-checkout?",
+    "a": "Partial clone (--filter=blob:none) fetches history but downloads file blobs lazily — fast clones of huge-history repos. Sparse-checkout populates only part of the tree in your working dir — essential for monorepos.",
+    "tags": ["advanced", "scale"]
+  },
+  {
+    "q": "What problem does Git LFS solve?",
+    "a": "It stores large binaries (videos, datasets) outside the repo, replacing them with tiny pointer files, so the repo stays small and clones fast. Partial clone/sparse-checkout don't shrink large blobs in history; LFS keeps them out.",
+    "tags": ["advanced", "scale"]
+  },
+  {
+    "q": "Submodule vs subtree — what's the core trade-off?",
+    "a": "A submodule embeds another repo by reference (a pinned commit, separate history; collaborators must run extra commands and it's easy to forget to update). A subtree merges the other repo's contents into yours (no extra commands, but larger history).",
+    "tags": ["advanced", "structure"]
+  },
+  {
+    "q": "What does git rerere do?",
+    "a": "'Reuse recorded resolution' — once enabled, Git remembers how you resolved a conflict and auto-applies the same resolution if that conflict recurs. A lifesaver during long or repeated rebases.",
+    "tags": ["advanced", "workflow"]
+  },
+  {
+    "q": "What do signed commits provide and how are hooks distributed?",
+    "a": "git commit -S signs with a GPG/SSH key, cryptographically proving authorship (a 'Verified' badge). Client hooks in .git/hooks aren't shared automatically, so teams distribute them with a manager like the pre-commit framework or Husky.",
+    "tags": ["advanced", "trust"]
   }
 ]

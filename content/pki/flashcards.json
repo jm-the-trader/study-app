@@ -141,5 +141,50 @@
     "q": "What is Certificate Transparency (CT) and how is it useful to you?",
     "a": "Public CAs log every issued cert to append-only CT logs. You can watch (e.g. via crt.sh) for certs issued for your domains — an unexpected one is an early warning of compromise.",
     "tags": ["lifecycle", "security"]
+  },
+  {
+    "q": "What does the ACME protocol automate, and what are its two challenge types?",
+    "a": "ACME automates certificate issuance: the client proves domain control via HTTP-01 (serve a token at /.well-known/acme-challenge/) or DNS-01 (publish a TXT record), the CA validates and issues, and the client auto-renews.",
+    "tags": ["advanced", "acme"]
+  },
+  {
+    "q": "When would you choose the DNS-01 challenge over HTTP-01?",
+    "a": "DNS-01 works for wildcard certificates and for hosts not publicly reachable on port 80, because you prove control via a DNS TXT record rather than a live web server. It needs API access to your DNS provider.",
+    "tags": ["advanced", "acme"]
+  },
+  {
+    "q": "What does cert-manager do in Kubernetes?",
+    "a": "It makes certificates native objects: you define an Issuer/ClusterIssuer (ACME CA, private CA, or Vault) and request a Certificate; cert-manager obtains it, stores it in a Secret, and auto-renews — TLS without humans running openssl.",
+    "tags": ["advanced", "kubernetes"]
+  },
+  {
+    "q": "How do short-lived certificates change the importance of revocation?",
+    "a": "If certs live hours and auto-renew, a compromised cert is useless almost immediately, so you can largely skip revocation (which has gaps via CRL/OCSP) and just let certs expire. This only works because issuance is automated.",
+    "tags": ["advanced", "lifecycle"]
+  },
+  {
+    "q": "What gap does OCSP must-staple close?",
+    "a": "Plain OCSP soft-fails — a client that can't reach the responder usually proceeds anyway. OCSP stapling has the server attach a signed OCSP response to the handshake; must-staple is a cert flag telling clients to HARD-FAIL if no staple is present.",
+    "tags": ["advanced", "revocation"]
+  },
+  {
+    "q": "What problem do SPIFFE/SPIRE solve, and how does it relate to mTLS?",
+    "a": "They give workloads cryptographic identities — a SPIFFE ID in a short-lived SVID (X.509 cert) — instead of shared static keys. SPIRE attests workloads and rotates SVIDs automatically, operationalizing mTLS so every service proves who it is.",
+    "tags": ["advanced", "identity"]
+  },
+  {
+    "q": "Why are root CA keys kept in HSMs and offline?",
+    "a": "An HSM performs signing without ever exposing the private key (tamper-resistant). Roots are kept offline and only sign intermediates via witnessed key ceremonies; intermediates do day-to-day signing so a compromised one can be revoked without re-rooting trust.",
+    "tags": ["advanced", "keys"]
+  },
+  {
+    "q": "What is Certificate Transparency used for as a detective control?",
+    "a": "CAs log every issued cert to public, append-only CT logs. By monitoring CT for your domain, you can detect mis-issuance — certs issued for you that you didn't request — catching a compromised or rogue CA.",
+    "tags": ["advanced", "ct"]
+  },
+  {
+    "q": "What risk does post-quantum / hybrid key exchange address?",
+    "a": "'Harvest now, decrypt later' — an attacker records today's traffic to decrypt once quantum computers can break RSA/ECDSA. Hybrid key exchange (classical + a PQC algorithm like ML-KEM) protects today's sessions against a future break.",
+    "tags": ["advanced", "pqc"]
   }
 ]

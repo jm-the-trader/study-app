@@ -108,5 +108,50 @@
     "q": "What are pipeline 'gates' and why encode them as required checks?",
     "a": "Automated quality/security conditions a change must pass (tests, coverage, lint, no critical vulns, no secrets, policy-as-code like tfsec/OPA). Making them required status checks means quality and security are enforced automatically, not left to trust.",
     "tags": ["best-practices"]
+  },
+  {
+    "q": "Composite action vs reusable workflow — what's the difference?",
+    "a": "A composite action bundles several STEPS into one action called with `uses:`. A reusable workflow is a whole workflow (jobs) called via `workflow_call`. Steps vs jobs/pipelines.",
+    "tags": ["advanced", "reuse"]
+  },
+  {
+    "q": "Why pin third-party GitHub Actions to a commit SHA instead of a tag?",
+    "a": "A moving tag like @v4 can be re-pointed at malicious code by a compromised maintainer; a full commit SHA is immutable. It's a supply-chain control.",
+    "tags": ["advanced", "security"]
+  },
+  {
+    "q": "Why are ephemeral self-hosted runners safer than persistent ones for PR builds?",
+    "a": "A persistent runner can be poisoned by one job (leftover files, cached creds) affecting the next. Ephemeral runners give each job a fresh, single-use machine that's destroyed after — no cross-job contamination.",
+    "tags": ["advanced", "runners"]
+  },
+  {
+    "q": "What is an SBOM and what does it let you answer?",
+    "a": "A Software Bill of Materials lists every dependency in an artifact (CycloneDX/SPDX). It lets you answer 'are we affected by CVE-X?' in seconds instead of auditing manually.",
+    "tags": ["advanced", "supply-chain"]
+  },
+  {
+    "q": "What do cosign and SLSA add to a pipeline?",
+    "a": "cosign (Sigstore) signs artifacts/images and attaches signed attestations (SBOM, provenance), verified at deploy. SLSA is a framework grading how tamper-resistant the build is. Together the pipeline cryptographically vouches for what it ships.",
+    "tags": ["advanced", "supply-chain"]
+  },
+  {
+    "q": "How does progressive delivery differ from a manually-promoted canary?",
+    "a": "Progressive delivery (Argo Rollouts/Flagger) automatically shifts traffic, queries metrics (error rate, latency), and promotes or rolls back on thresholds — no human in the loop. A plain canary needs a human to watch and promote.",
+    "tags": ["advanced", "delivery"]
+  },
+  {
+    "q": "Why decouple deploy from release with feature flags?",
+    "a": "Code can be deployed (live but dark) without being released (flag off). Turning a flag on/off releases or instantly rolls back without a redeploy — separating the risky 'ship the bits' step from the 'expose to users' step.",
+    "tags": ["advanced", "delivery"]
+  },
+  {
+    "q": "What are the four DORA metrics and what do they measure?",
+    "a": "Deployment frequency and lead time for changes measure THROUGHPUT; change failure rate and time to restore service measure STABILITY. Healthy teams improve both together.",
+    "tags": ["advanced", "metrics"]
+  },
+  {
+    "q": "What does concurrency with cancel-in-progress do in a workflow?",
+    "a": "It groups runs (e.g. by ref) and cancels superseded in-flight runs so you don't waste minutes building stale commits when newer pushes arrive.",
+    "tags": ["advanced", "ci"]
   }
 ]

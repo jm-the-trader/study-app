@@ -98,5 +98,45 @@
     "q": "Does Dynatrace support SLOs?",
     "a": "Yes — natively. You define an SLI (availability, success rate, latency threshold), set a target over a window, and track the error budget and burn — the same SLI/SLO/error-budget model from general observability, built into the platform.",
     "tags": ["operations", "slo"]
+  },
+  {
+    "q": "Why filter early in a DQL query?",
+    "a": "DQL is pipe-based and query cost scales with scanned data. Filtering early (filter ... right after fetch) cuts the data volume every later stage processes — faster and cheaper queries.",
+    "tags": ["advanced", "dql"]
+  },
+  {
+    "q": "What does `parse` do in DQL that storage alone doesn't?",
+    "a": "parse extracts structured fields from raw text at query time using the DPL pattern grammar — so you can filter/aggregate on values that were never indexed as separate fields.",
+    "tags": ["advanced", "dql"]
+  },
+  {
+    "q": "What is OpenPipeline and why process data at ingest?",
+    "a": "OpenPipeline processes data as it arrives — parse, enrich, mask PII, route to Grail buckets, drop noise, derive metrics. Doing it at ingest makes queries cheaper/faster and keeps sensitive data out of storage entirely.",
+    "tags": ["advanced", "ingest"]
+  },
+  {
+    "q": "How do management zones and IAM policies divide responsibility?",
+    "a": "Management zones scope WHICH entities a user sees (logical views by team/app/env). IAM policies (incl. DQL-level) control WHICH actions and data a user can access. Combine them: zones for visibility, IAM for permissions.",
+    "tags": ["advanced", "governance"]
+  },
+  {
+    "q": "What does Davis do with anomalies, and how do you keep signal high?",
+    "a": "Davis auto-baselines metrics (learning seasonal normal) and raises one Problem per causal cluster of anomalies (root cause identified), not one alert per symptom. Tune sensitivity and use maintenance windows so planned work doesn't page.",
+    "tags": ["advanced", "davis"]
+  },
+  {
+    "q": "Name three ways Dynatrace can act on a Davis Problem, not just display it.",
+    "a": "Workflows/AutomationEngine (post to Slack/ServiceNow, run remediation), Monitoring as Code via Monaco/Terraform for config in Git, and the Site Reliability Guardian as an automated release-validation gate in a pipeline.",
+    "tags": ["advanced", "automation"]
+  },
+  {
+    "q": "Where is retention configured in Grail, and how do you control cost?",
+    "a": "Retention is set per Grail bucket — route high-value data to a long-retention bucket and noisy debug logs to a short one. Control consumption cost by ingesting less (OpenPipeline filtering), retaining shorter, and avoiding unbounded high-cardinality custom metrics.",
+    "tags": ["advanced", "cost"]
+  },
+  {
+    "q": "Why can one DQL query correlate logs, traces, and metrics?",
+    "a": "Grail is a unified lakehouse storing logs, events, traces, and metrics together, so a single DQL query can fetch and join across signal types instead of querying separate systems.",
+    "tags": ["advanced", "grail"]
   }
 ]

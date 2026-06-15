@@ -116,5 +116,50 @@
     "q": "Which systemd directives cap a service's CPU and memory?",
     "a": "MemoryMax / MemoryHigh for memory; CPUQuota (e.g. 50%) and CPUWeight for CPU; TasksMax to cap process/thread count. Apply live with `systemctl set-property`.",
     "tags": ["cgroups"]
+  },
+  {
+    "q": "What is a namespace, and how does a user namespace enable rootless isolation?",
+    "a": "A namespace gives a process its own view of one global resource (PID, mount, net, UTS, IPC, user, cgroup). A user namespace maps in-namespace UID 0 to an unprivileged host UID, so a process can be 'root' inside while harmless outside — enabling rootless containers.",
+    "tags": ["advanced", "namespaces"]
+  },
+  {
+    "q": "What are Linux capabilities and why use them?",
+    "a": "Root is split into ~40 capabilities, so a process holds only the slice it needs (e.g. CAP_NET_BIND_SERVICE to bind ports <1024) instead of full root. Grant CAP_SYS_ADMIN reluctantly — it's nearly root.",
+    "tags": ["advanced", "security"]
+  },
+  {
+    "q": "Name three systemd directives that sandbox a service.",
+    "a": "ProtectSystem=strict (mostly read-only FS), PrivateTmp=true (private /tmp), NoNewPrivileges=true (no privilege escalation), ProtectHome, CapabilityBoundingSet, SystemCallFilter (seccomp). `systemd-analyze security <unit>` scores how hardened a unit is.",
+    "tags": ["advanced", "systemd"]
+  },
+  {
+    "q": "How does MemoryHigh= differ from MemoryMax=?",
+    "a": "MemoryMax is the hard cap — exceed it and the cgroup is OOM-killed. MemoryHigh is a soft throttle: the kernel reclaims aggressively above it, applying back-pressure before the hard kill, often avoiding the OOM killer entirely.",
+    "tags": ["advanced", "cgroups"]
+  },
+  {
+    "q": "What is PSI and why is it a better saturation signal than utilization?",
+    "a": "Pressure Stall Information (/proc/pressure/{cpu,memory,io}) reports the % of time tasks were STALLED waiting for a resource. It detects contention directly, whereas high utilization alone may not mean anything is actually waiting.",
+    "tags": ["advanced", "cgroups"]
+  },
+  {
+    "q": "What is socket activation in systemd?",
+    "a": "systemd opens the listening socket itself and starts the service only on the first connection (a paired .socket unit), and can hand the socket across restarts with zero dropped connections — saving resources and enabling on-demand start.",
+    "tags": ["advanced", "systemd"]
+  },
+  {
+    "q": "Why use systemd timers instead of cron?",
+    "a": "Timers (.timer units) support calendar and monotonic schedules, missed-run catch-up (Persistent=true), randomized delays, and run the job as a normal unit — so output goes to the journal and it inherits resource limits/sandboxing.",
+    "tags": ["advanced", "systemd"]
+  },
+  {
+    "q": "How does the OOM killer choose a victim, and how do you influence it?",
+    "a": "It picks by oom_score (roughly the biggest memory user), adjustable per process via oom_score_adj. A cgroup hitting MemoryMax is OOM-killed within that cgroup (Kubernetes' OOMKilled). Protect a critical process with a negative adj.",
+    "tags": ["advanced", "memory"]
+  },
+  {
+    "q": "A service fails with 'too many open files' — where do you fix it durably?",
+    "a": "Set the file-descriptor rlimit per service with LimitNOFILE= in the systemd unit, rather than relying on shell ulimit defaults that won't apply to the managed service.",
+    "tags": ["advanced", "limits"]
   }
 ]
