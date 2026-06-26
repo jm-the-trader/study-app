@@ -1,0 +1,8 @@
+{
+  "id": "openshift",
+  "title": "OpenShift",
+  "emoji": "🎩",
+  "blurb": "Red Hat's enterprise Kubernetes, in depth: cluster architecture and operators, Security Context Constraints and the arbitrary-UID contract, S2I builds and ImageStreams, Routes and the HAProxy router, storage, OLM/GitOps, and the oc troubleshooting toolkit.",
+  "accent": "#f87171",
+  "order": 6.1
+}

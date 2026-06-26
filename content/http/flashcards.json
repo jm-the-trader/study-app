@@ -1,0 +1,158 @@
+[
+  {
+    "q": "What are the four parts of an HTTP request, and which is optional?",
+    "a": "Request line (method + path/query + version), headers, a blank line, and an optional body. GETs usually have no body; POST/PUT/PATCH carry one.",
+    "hint": "Line, headers, blank, body.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "Why is the HTTP/1.1 Host header essential?",
+    "a": "One IP and port can serve many sites (virtual hosting). The Host header tells the server/proxy which site you want; for HTTPS, TLS SNI plays the same role at the TLS layer. It's how an Nginx server_name or an OpenShift Route selects a backend.",
+    "hint": "Many sites, one IP.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "HTTP is stateless — so how does a server know you're logged in across requests?",
+    "a": "Each request re-presents context: a session cookie (sent automatically) or an Authorization token. The server rebuilds 'who you are' every time. Statelessness is also what lets any replica behind a load balancer serve any request.",
+    "hint": "The client re-sends proof each time.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "What's in a URL, and which part never reaches the server?",
+    "a": "scheme://host:port/path?query#fragment. The fragment (#…) is handled entirely by the browser and is never sent to the server. The host is resolved to an IP via DNS.",
+    "hint": "Think about the #.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "Define 'safe' and 'idempotent' methods, and give examples.",
+    "a": "Safe = read-only, no state change (GET, HEAD, OPTIONS). Idempotent = repeating it has the same effect as doing it once (GET, HEAD, PUT, DELETE, OPTIONS). POST and PATCH are neither safe nor idempotent.",
+    "hint": "Read-only vs repeat-safe.",
+    "tags": ["methods"]
+  },
+  {
+    "q": "Why does idempotency matter for retries?",
+    "a": "A client or proxy can safely retry a timed-out idempotent request (GET/PUT/DELETE), but retrying a POST might create a duplicate or double-charge. That's why payment APIs use idempotency keys and load balancers don't auto-retry POST.",
+    "hint": "Safe to repeat?",
+    "tags": ["methods"]
+  },
+  {
+    "q": "What does the first digit of an HTTP status code tell you, especially 4xx vs 5xx?",
+    "a": "The class: 1xx informational, 2xx success, 3xx redirect, 4xx client error (you sent something wrong — fix the request), 5xx server error (the server/gateway failed — fix the server). 4xx is your fault; 5xx is theirs.",
+    "hint": "Who's to blame?",
+    "tags": ["status-codes"]
+  },
+  {
+    "q": "Differentiate 401 from 403.",
+    "a": "401 Unauthorized means not authenticated — you need to log in or send a valid token (it's misnamed; it really means 'unauthenticated'). 403 Forbidden means you ARE authenticated but not permitted to do this. Re-sending credentials helps a 401, not a 403.",
+    "hint": "Who are you vs what may you do.",
+    "tags": ["status-codes"]
+  },
+  {
+    "q": "What do 502, 503, and 504 mean behind a proxy or OpenShift Route?",
+    "a": "They're proxy/router codes, not your app's. 502 Bad Gateway = backend returned an invalid response. 503 Service Unavailable = no healthy/ready backend (e.g. zero ready Pods). 504 Gateway Timeout = backend didn't respond before the timeout. Look at the backend and its health, not the request.",
+    "hint": "Proxy-origin codes.",
+    "tags": ["status-codes", "troubleshooting"]
+  },
+  {
+    "q": "What's the difference between a 301/308 and a 302/307 redirect?",
+    "a": "301/308 are permanent (cacheable), 302/307 are temporary. The newer 307/308 preserve the original method and body; the older 301/302 historically let clients switch to GET.",
+    "hint": "Permanent vs temporary; method-preserving?",
+    "tags": ["status-codes"]
+  },
+  {
+    "q": "What's the difference between the Accept and Content-Type headers?",
+    "a": "Accept is the client saying which media types it wants back (e.g. application/json). Content-Type states the media type of the body being sent in this message. On a POST you set Content-Type so the server parses your body correctly.",
+    "hint": "Want vs sending.",
+    "tags": ["headers"]
+  },
+  {
+    "q": "What do the HttpOnly, Secure, and SameSite cookie attributes do?",
+    "a": "HttpOnly hides the cookie from JavaScript (mitigates XSS theft). Secure sends it only over HTTPS. SameSite (Lax/Strict/None) controls whether it rides cross-site requests (mitigates CSRF); None requires Secure.",
+    "hint": "Three security flags.",
+    "tags": ["headers", "security"]
+  },
+  {
+    "q": "An API works in curl but the browser reports 'blocked by CORS policy.' Where's the fix and why does curl pass?",
+    "a": "CORS is a browser-enforced rule (the same-origin policy); curl and backends ignore it. The fix is on the server — send the right Access-Control-Allow-Origin/Methods/Headers response headers (and answer the preflight OPTIONS). You don't fix CORS in the frontend or by disabling browser security.",
+    "hint": "Browser-only enforcement.",
+    "tags": ["headers", "cors"]
+  },
+  {
+    "q": "Your app logs show every visitor coming from one internal IP. Which header fixes it, and who sets it?",
+    "a": "The app is reading the proxy's socket IP. Read X-Forwarded-For for the original client IP (and X-Forwarded-Proto for the original https scheme); the reverse proxy / load balancer / OpenShift router sets these.",
+    "hint": "X-Forwarded-*",
+    "tags": ["headers", "proxies"]
+  },
+  {
+    "q": "Name the three guarantees TLS provides, and why authentication isn't optional.",
+    "a": "Encryption (privacy), integrity (tamper detection), and authentication (proof of identity via a CA-signed certificate). Without authentication, you might have a perfectly encrypted channel to an impostor — encryption to the wrong party is worthless.",
+    "hint": "Encrypt, verify integrity, prove identity.",
+    "tags": ["tls"]
+  },
+  {
+    "q": "What is SNI and which HTTP header is it analogous to?",
+    "a": "Server Name Indication: the hostname the client wants, sent in the clear in the TLS ClientHello, so a server fronting many sites knows which certificate to present before any HTTP is exchanged. It's the TLS-layer analog of the HTTP Host header.",
+    "hint": "Host header, but for TLS.",
+    "tags": ["tls"]
+  },
+  {
+    "q": "Compare edge, passthrough, and reencrypt TLS termination.",
+    "a": "Edge: TLS terminates at the proxy/router, plaintext to the app (simplest; trust the internal hop). Passthrough: TLS terminates at the app, encrypted end-to-end (app owns certs). Reencrypt: terminate at the proxy then open a new TLS hop to the app (external cert at edge + internal encryption). These are the OpenShift Route modes.",
+    "hint": "Where does the tunnel end?",
+    "tags": ["tls"]
+  },
+  {
+    "q": "What usually causes a 'your connection is not private' warning?",
+    "a": "A certificate (identity) problem, not an encryption failure: an expired cert, a hostname mismatch (cert doesn't match the requested Host/SNI), or a cert signed by a CA the client doesn't trust. The traffic may still be encrypted — read the specific error to see which.",
+    "hint": "Identity, not encryption.",
+    "tags": ["tls", "troubleshooting"]
+  },
+  {
+    "q": "What problem did HTTP/1.1 persistent connections solve, and what limitation remained?",
+    "a": "Keep-alive reuses one TCP connection for many requests, avoiding a handshake per file. But responses still return in order on that connection, so a slow one blocks those behind it (application-layer head-of-line blocking) — which is why browsers opened ~6 connections per host.",
+    "hint": "Reuse the connection; still in order.",
+    "tags": ["versions"]
+  },
+  {
+    "q": "How does HTTP/2 differ from HTTP/3, in terms of head-of-line blocking?",
+    "a": "HTTP/2 multiplexes many streams on one TCP connection, fixing application-layer HOL blocking — but a lost TCP packet still stalls all streams (transport-layer HOL blocking). HTTP/3 runs over QUIC (UDP) where streams are independent at the transport layer, so one lost packet doesn't stall the rest.",
+    "hint": "App-layer vs TCP-layer blocking.",
+    "tags": ["versions"]
+  },
+  {
+    "q": "In HTTP caching, what's the difference between freshness and validation?",
+    "a": "Freshness (Cache-Control: max-age) lets a cache reuse a response with zero network round-trips until it expires. Validation (ETag + If-None-Match, or Last-Modified/If-Modified-Since) is a cheap revalidation once stale: the server replies 304 Not Modified — headers only, no body — if nothing changed.",
+    "hint": "Skip the request vs cheap re-check.",
+    "tags": ["caching"]
+  },
+  {
+    "q": "Why won't a CSS change show up, and what's the standard fix?",
+    "a": "A long Cache-Control max-age on the file means browsers keep reusing the cached copy until it expires — caching working as instructed. Fix with cache busting: put a content hash in the filename (style.a1b2c3.css) and serve it immutable, so a change yields a brand-new URL the cache has never seen.",
+    "hint": "Cache busting.",
+    "tags": ["caching", "troubleshooting"]
+  },
+  {
+    "q": "What can an L7 load balancer do that an L4 one cannot? Name OpenShift's L7 component.",
+    "a": "An L7 LB understands HTTP, so it can route by URL path/host, terminate TLS, read/add headers, do sticky sessions, and retry by method. An L4 LB only forwards TCP/UDP by IP and port. OpenShift's Route → HAProxy router is L7; a bare Service ClusterIP is L4.",
+    "hint": "Understands HTTP vs forwards packets.",
+    "tags": ["proxies"]
+  },
+  {
+    "q": "An app succeeds in ~20s but users get a 504. What's happening, and what do you adjust?",
+    "a": "A proxy/router in front has a shorter timeout than the app's response time — the smallest timeout in the chain wins, so the proxy gives up and returns 504 before the app finishes. Raise the relevant timeout (e.g. the OpenShift Route's haproxy.router.openshift.io/timeout annotation) or make the endpoint faster/async.",
+    "hint": "Smallest timeout wins.",
+    "tags": ["proxies", "troubleshooting"]
+  },
+  {
+    "q": "Which curl invocation isolates whether slowness is DNS, TCP, TLS, or the server?",
+    "a": "curl -w with the timing fields, e.g. -w 'dns=%{time_namelookup} connect=%{time_connect} tls=%{time_appconnect} ttfb=%{time_starttransfer} total=%{time_total}'. Compare the phases: time_namelookup = DNS, time_appconnect = TLS handshake, time_starttransfer = server time-to-first-byte.",
+    "hint": "curl -w timing breakdown.",
+    "tags": ["debugging"]
+  },
+  {
+    "q": "Why avoid sticky sessions, and what's the alternative?",
+    "a": "Sticky sessions pin a client to one backend (via an LB cookie), which undermines even load distribution and clean rollouts and reintroduces state. Prefer stateless apps that keep session data in a shared store, so any replica can serve any request.",
+    "hint": "Statelessness scales.",
+    "tags": ["proxies"]
+  }
+]

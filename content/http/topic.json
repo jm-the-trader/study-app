@@ -1,0 +1,8 @@
+{
+  "id": "http",
+  "title": "HTTP & HTTPS",
+  "emoji": "📨",
+  "blurb": "The protocol the web runs on: the request/response model, methods and status codes, headers, cookies and CORS, HTTPS/TLS termination, HTTP/1.1 vs 2 vs 3, caching, and debugging real traffic with curl behind proxies and load balancers.",
+  "accent": "#fbbf24",
+  "order": 3.7
+}

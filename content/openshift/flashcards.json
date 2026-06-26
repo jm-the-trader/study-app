@@ -1,0 +1,170 @@
+[
+  {
+    "q": "In one sentence, what is OpenShift's relationship to Kubernetes?",
+    "a": "OpenShift is a certified Kubernetes distribution — standard K8s objects and kubectl all work unchanged — plus an integrated, self-managing layer of security, developer tooling, networking, and ops features.",
+    "hint": "Kubernetes + what?",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "Why can't you SSH into an OpenShift node and permanently install a package?",
+    "a": "Nodes run immutable RHEL CoreOS. Manual changes drift the node from its declared state and don't survive. The right way is a MachineConfig, reconciled onto the node pool by the Machine Config Operator.",
+    "hint": "Immutable OS, declarative config.",
+    "tags": ["architecture"]
+  },
+  {
+    "q": "What does `oc get clusteroperators` show, and when is it your first move?",
+    "a": "The health of the ~30 Cluster Operators that make up the platform (API server, ingress/router, DNS, registry, auth, monitoring…). It's the first thing to check when something platform-level breaks — an Available=False or Degraded=True row points at the culprit.",
+    "hint": "The platform is built from Operators.",
+    "tags": ["architecture", "troubleshooting"]
+  },
+  {
+    "q": "What's the difference between a Project and a namespace in OpenShift?",
+    "a": "A Project is a Kubernetes namespace plus extra metadata and default policy (such as the UID range used by SCCs). `oc new-project` creates an isolated, self-service space.",
+    "hint": "Namespace + policy.",
+    "tags": ["fundamentals"]
+  },
+  {
+    "q": "What is a Security Context Constraint (SCC)?",
+    "a": "An OpenShift admission policy that decides what a Pod may do: run as root? use host network/PID? mount hostPath? add capabilities? which UID/GID range? It both validates a Pod and fills in defaults (like the random UID it runs as).",
+    "hint": "Pod-level privilege policy.",
+    "tags": ["security"]
+  },
+  {
+    "q": "What does the default `restricted-v2` SCC do to your container?",
+    "a": "Runs it non-root with a random high UID and primary group GID 0, drops most Linux capabilities, and forbids host access. Images that assume root or a fixed UID fail under it.",
+    "hint": "Random UID, group 0.",
+    "tags": ["security"]
+  },
+  {
+    "q": "State the arbitrary-UID contract: what three properties must an image have to run under restricted-v2?",
+    "a": "(1) Don't require a specific UID — it runs as a random one. (2) Make files group-0 owned and group-writable (chgrp -R 0 && chmod -R g=u), because the process's group is 0. (3) Bind only unprivileged ports (≥1024), since non-root can't bind <1024.",
+    "hint": "Group 0, group-writable, high port.",
+    "tags": ["security"]
+  },
+  {
+    "q": "An image runs locally but CrashLoopBackOffs with 'permission denied' on OpenShift. Likely cause and fix (without anyuid)?",
+    "a": "It violates the arbitrary-UID contract. Fix the image: make written paths group-0 writable, don't depend on a passwd entry or a specific UID, write to /tmp or a mounted volume, and listen on a port ≥1024 — rather than granting the anyuid SCC.",
+    "hint": "Fix the image, not the SCC.",
+    "tags": ["security", "troubleshooting"]
+  },
+  {
+    "q": "How do SCCs and RBAC differ?",
+    "a": "SCCs govern what a running Pod may do (runtime privileges); RBAC governs who can perform which actions on the API. Different axes — you typically need both — and both attach to the Pod's ServiceAccount.",
+    "hint": "Runtime privilege vs API permission.",
+    "tags": ["security"]
+  },
+  {
+    "q": "What does Source-to-Image (S2I) combine, and what are the two scripts involved?",
+    "a": "It combines your source code with a language builder image to produce a runnable app image — no Dockerfile. The builder image ships `assemble` (build/install deps into the image) and `run` (start the app).",
+    "hint": "Builder image + source.",
+    "tags": ["builds"]
+  },
+  {
+    "q": "What is a BuildConfig, and what build strategies does it support?",
+    "a": "The object describing how to build an image: a source (Git/Dockerfile/binary), a strategy, and an output ImageStreamTag. Strategies: Source (S2I), Docker (your own Dockerfile/Containerfile), and Binary (upload local artifacts).",
+    "hint": "The build recipe.",
+    "tags": ["builds"]
+  },
+  {
+    "q": "What does an ImageStream give you over referencing a registry path directly?",
+    "a": "Stable tag references that resolve to an immutable image digest (a tag's convenience with a digest's safety), plus image triggers that can automatically redeploy a Deployment when a new image is pushed to a tag.",
+    "hint": "Tag indirection + triggers.",
+    "tags": ["builds"]
+  },
+  {
+    "q": "What is the in-cluster DNS name of the OpenShift internal image registry?",
+    "a": "image-registry.openshift-image-registry.svc:5000 — a Service DNS name (<service>.<namespace>.svc) resolving to the registry's ClusterIP, so builds push and Deployments pull without leaving the cluster.",
+    "hint": "...openshift-image-registry.svc:5000",
+    "tags": ["builds", "networking"]
+  },
+  {
+    "q": "Trace an external HTTPS request to an app Pod through its three hops.",
+    "a": "User → HAProxy router (programmed by a Route, handles host routing + TLS) → Service ClusterIP (kube-proxy/OVN load-balances) → a ready app Pod (a Service endpoint).",
+    "hint": "Route → Service → Pod.",
+    "tags": ["networking"]
+  },
+  {
+    "q": "Name OpenShift's three Route TLS termination modes and where TLS ends in each.",
+    "a": "edge — TLS terminates at the router, plaintext to the Pod (most common). passthrough — TLS terminates at the Pod; the router can't read the traffic. reencrypt — terminates at the router, then re-encrypts to the Pod with an internal cert.",
+    "hint": "edge / passthrough / reencrypt.",
+    "tags": ["networking", "tls"]
+  },
+  {
+    "q": "Your app terminates its own TLS and you need it encrypted end-to-end. Which Route termination mode?",
+    "a": "passthrough — the router forwards the TLS connection untouched so the Pod terminates it. edge won't work because edge decrypts at the router and sends plaintext to the Pod.",
+    "hint": "Router must not decrypt.",
+    "tags": ["networking", "tls"]
+  },
+  {
+    "q": "A Route returns 503. What's the most likely cause and what do you check first?",
+    "a": "The backing Service has no ready endpoints — usually all Pods are failing their readiness probe or none are running. Check the Service's endpoints and the Pods' readiness before blaming the app. (504 instead means the backend exceeded the route timeout.)",
+    "hint": "No ready endpoints.",
+    "tags": ["networking", "troubleshooting"]
+  },
+  {
+    "q": "What does a NetworkPolicy do, and what's the standard pattern?",
+    "a": "It turns the default Pod-to-Pod allow-all into allow-list rules (enforced by OVN-Kubernetes). The standard pattern is default-deny ingress for a namespace, then explicitly allow only the required paths (e.g. frontend → backend:8080).",
+    "hint": "Default-deny, then allow-list.",
+    "tags": ["networking", "security"]
+  },
+  {
+    "q": "Difference between a PersistentVolume, a PersistentVolumeClaim, and a StorageClass?",
+    "a": "PV = an actual piece of storage in the cluster. PVC = a Pod's request for storage (size + access mode) that binds to a PV. StorageClass = the template a CSI driver uses to dynamically provision a PV when a PVC asks for it.",
+    "hint": "Storage / request / template.",
+    "tags": ["storage"]
+  },
+  {
+    "q": "You scaled a Deployment across nodes and Pods are stuck ContainerCreating on volume attach. Why?",
+    "a": "The PVC's access mode is ReadWriteOnce (RWO), which allows mounting read-write on only one node at a time. Spreading replicas across nodes needs ReadWriteMany (RWX) storage, or a StatefulSet giving each replica its own volume.",
+    "hint": "RWO is per-node.",
+    "tags": ["storage"]
+  },
+  {
+    "q": "Are OpenShift/Kubernetes Secrets encrypted? How should you treat them?",
+    "a": "By default they're only base64-encoded, not encrypted at rest. Treat the manifest as sensitive: gate it with RBAC, never commit real values to Git, and for serious needs layer on the External Secrets Operator or Vault.",
+    "hint": "base64 ≠ encryption.",
+    "tags": ["security", "storage"]
+  },
+  {
+    "q": "What two pieces make up an Operator?",
+    "a": "A Custom Resource Definition (CRD) that adds a new object type to the Kubernetes API, plus a controller that watches those objects and reconciles real-world state to match — encoding Day-2 ops (upgrades, backups, failover) as software.",
+    "hint": "CRD + controller.",
+    "tags": ["operators"]
+  },
+  {
+    "q": "What is OLM, and which objects install and update an Operator?",
+    "a": "The Operator Lifecycle Manager installs and upgrades Operators. A CatalogSource lists available Operators (OperatorHub); a Subscription says 'install and track this channel'; an InstallPlan applies the changes; a ClusterServiceVersion (CSV) is the installed Operator's manifest.",
+    "hint": "CatalogSource → Subscription → InstallPlan → CSV.",
+    "tags": ["operators"]
+  },
+  {
+    "q": "In OpenShift GitOps (Argo CD), how do you roll back a deploy and why is there no config drift?",
+    "a": "Git is the source of truth, so you roll back with `git revert` and let Argo CD sync. Argo CD continuously compares the cluster to Git and reconciles any difference, so manual or accidental changes are detected and corrected instead of silently persisting.",
+    "hint": "Git is the source of truth.",
+    "tags": ["gitops", "cicd"]
+  },
+  {
+    "q": "What are OpenShift Pipelines and OpenShift GitOps, and how do they divide labor?",
+    "a": "Pipelines is supported Tekton — Kubernetes-native CI where each step runs as a Pod (build/test/image). GitOps is supported Argo CD — declarative deploys from Git. Common split: Pipelines (or S2I) builds the artifact, GitOps deploys it.",
+    "hint": "Tekton builds, Argo CD deploys.",
+    "tags": ["gitops", "cicd"]
+  },
+  {
+    "q": "Give the ordered `oc` ladder for debugging a broken Pod.",
+    "a": "oc get pods → oc describe pod (read the Events section) → oc logs --previous → oc rsh / oc debug → oc adm top → oc get clusteroperators → oc adm must-gather. Work top-down; most issues are explained by describe's events plus the previous container's logs.",
+    "hint": "Symptoms → events → logs → exec → resources → platform.",
+    "tags": ["troubleshooting"]
+  },
+  {
+    "q": "Why is checking a database in a liveness probe dangerous?",
+    "a": "Liveness failures restart the container, so a DB blip would restart every Pod at once — an outage amplified into a restart storm. Keep liveness cheap and dependency-free (is the process wedged?); put dependency checks in the readiness probe, which only removes the Pod from traffic.",
+    "hint": "Liveness restarts; readiness gates traffic.",
+    "tags": ["troubleshooting", "health"]
+  },
+  {
+    "q": "What does a PodDisruptionBudget protect against?",
+    "a": "Voluntary disruptions like node drains and cluster upgrades. It keeps a minimum number of replicas available so a rolling node update or upgrade can't evict every Pod of an app at once.",
+    "hint": "Voluntary disruptions.",
+    "tags": ["health", "operations"]
+  }
+]
