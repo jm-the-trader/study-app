@@ -26,6 +26,33 @@ Instead, node configuration is declarative. The **Machine Config Operator (MCO)*
 
 The **API server** listens on port **6443** — the single front door every `oc`/`kubectl` call and every controller goes through.
 
+## The path of an API request
+
+Everything that happens in the cluster is an API call. When you `oc apply` a manifest, the API server runs it through a fixed pipeline before anything is stored — and knowing this pipeline is how you reason about *why* a request was rejected:
+
+```
+ oc apply ─► API server (:6443, TLS)
+                  │
+            ┌─────▼─────┐  (1) Authentication — WHO are you?
+            │  authn    │      (client certs, bearer tokens, OAuth)
+            └─────┬─────┘
+            ┌─────▼─────┐  (2) Authorization — MAY you do this?
+            │  authz    │      (RBAC: Role / RoleBinding)
+            └─────┬─────┘
+            ┌─────▼─────┐  (3) Admission — is it allowed & valid?
+            │ admission │      mutating webhooks -> validating webhooks
+            └─────┬─────┘      (an SCC decides the Pod's UID right here)
+                  │
+            ┌─────▼─────┐  (4) Persist desired state
+            │   etcd    │
+            └─────┬─────┘
+                  ▼
+   controllers / operators / scheduler  watch etcd and reconcile
+   reality ──────────────────────────►  toward the stored desired state
+```
+
+> 🔑 **authn → authz → admission → etcd → reconcile.** The API server only ever *records desired state*; it never acts on the world directly. Separate controllers and Operators watch for the change and make reality match. A `403` comes from step (2) (RBAC), while "Pod rejected: must run as non-root" comes from step (3) (an SCC at admission — the next lesson). Knowing which step rejected you tells you exactly what to fix.
+
 ## The big idea: the cluster runs on Operators
 
 An **Operator** is a controller that encodes operational knowledge — install, configure, upgrade, repair — for a piece of software, exposed through Kubernetes-native objects. OpenShift takes this to its conclusion: **the platform is built from Operators.**

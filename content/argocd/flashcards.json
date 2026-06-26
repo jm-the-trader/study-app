@@ -1,0 +1,134 @@
+[
+  {
+    "q": "State the four GitOps principles.",
+    "a": "Desired state is Declarative, Versioned and immutable (in Git), Pulled automatically by an in-cluster agent, and Continuously reconciled so drift is corrected.",
+    "hint": "Declarative, versioned, pulled, reconciled.",
+    "tags": ["gitops"]
+  },
+  {
+    "q": "How does pull-based CD (Argo CD) differ from push-based CD, and why is pull safer?",
+    "a": "In push CD, an external CI pipeline holds cluster credentials and runs kubectl apply inward. In pull CD, an agent inside the cluster pulls desired state from Git and reconciles it. Pull is safer because CI needs no cluster admin (smaller blast radius), drift is detected, and Git is the audit log and rollback button.",
+    "hint": "Agent pulls vs pipeline pushes.",
+    "tags": ["gitops"]
+  },
+  {
+    "q": "Is Argo CD a CI tool? How does it relate to one?",
+    "a": "No — Argo CD is CD, not CI. It doesn't build images or run tests. CI (Tekton/Actions/Jenkins) builds and pushes the image and updates a manifest in Git; Argo CD notices the Git change and deploys it. CI makes the artifact; Argo CD makes the cluster match Git.",
+    "hint": "CD, not CI.",
+    "tags": ["gitops", "cicd"]
+  },
+  {
+    "q": "What does an Argo CD Application bind together?",
+    "a": "A source (repoURL + targetRevision + path in Git) to a destination (cluster server + namespace). Read it as: keep the manifests at this repo/path applied to this namespace on this cluster.",
+    "hint": "Source → destination.",
+    "tags": ["applications"]
+  },
+  {
+    "q": "Explain why an Application can be 'Synced' but the app is still down.",
+    "a": "Sync status only means the live cluster matches Git. Health status is a separate signal about whether resources actually work. If Git contains a broken manifest (crashing image, failing probe), Argo applies it faithfully and reports Synced AND Degraded at once. Synced ≠ Healthy.",
+    "hint": "Two independent signals.",
+    "tags": ["applications"]
+  },
+  {
+    "q": "What are the possible sync statuses and health statuses?",
+    "a": "Sync: Synced or OutOfSync (does live match Git?). Health: Healthy, Progressing, Degraded, Missing, Suspended (are the resources working?). Sync is fidelity to Git; health is whether the running thing is OK.",
+    "hint": "Synced/OutOfSync vs Healthy/Degraded/...",
+    "tags": ["applications"]
+  },
+  {
+    "q": "What's the difference between manual and automated sync?",
+    "a": "Manual (no automated block) leaves the app OutOfSync and waits for you to click Sync — a good production gate. Automated applies changes as soon as Git changes, and can add prune (delete what's removed from Git) and selfHeal (revert live drift) for full reconciliation.",
+    "hint": "Wait for a click vs apply automatically.",
+    "tags": ["applications"]
+  },
+  {
+    "q": "Which manifest tools can Argo CD render, and why does deterministic rendering matter?",
+    "a": "Plain YAML directories, Helm charts, Kustomize overlays, or a config-management plugin. Deterministic rendering means the same Git commit always produces the same Kubernetes manifests — which is what makes GitOps reproducible and rollbacks reliable.",
+    "hint": "YAML / Helm / Kustomize.",
+    "tags": ["manifests"]
+  },
+  {
+    "q": "How do you manage per-environment config differences in GitOps?",
+    "a": "Kustomize overlays (a shared base plus thin per-env patches) or Helm values files (one chart plus values-staging.yaml/values-prod.yaml). Keep the deltas small and explicit — replicas, sizes, hostnames, secret refs — so the entire environment difference is reviewable in one place.",
+    "hint": "Base + small overlays/values.",
+    "tags": ["manifests"]
+  },
+  {
+    "q": "What is an ApplicationSet, and what do its generators do?",
+    "a": "A controller that generates many Applications from one template plus a generator that supplies the variations. Generators include list (fixed values), git (a folder/file per app), cluster (one app per managed cluster), and matrix (combine generators). It avoids hand-writing repetitive Application YAML.",
+    "hint": "Template + generator → many Apps.",
+    "tags": ["manifests"]
+  },
+  {
+    "q": "Which ApplicationSet generators enable self-service onboarding and fleet-wide deploys?",
+    "a": "The git generator creates an Application automatically when you add a folder/file to a repo (self-service onboarding). The cluster generator creates an Application per cluster Argo manages, so registering a new cluster auto-deploys your platform apps to it (fleet-wide).",
+    "hint": "git = onboard, cluster = fleet.",
+    "tags": ["manifests"]
+  },
+  {
+    "q": "What is the app-of-apps pattern, and when use it vs an ApplicationSet?",
+    "a": "A root Application whose Git path contains other Application manifests, so registering one app bootstraps a whole environment. Use app-of-apps for a curated, hand-picked set (often with ordering between them); use an ApplicationSet for generated, repetitive sets (many similar apps or clusters).",
+    "hint": "Root app deploys child apps.",
+    "tags": ["composition"]
+  },
+  {
+    "q": "What do sync waves do, and give the classic use case.",
+    "a": "Sync waves order resources within a sync — lower wave numbers apply and become healthy before higher ones. Classic case: install a CRD/operator in an early wave so a custom resource depending on it (a later wave) doesn't fail with 'no matches for kind.' Argo waits for each wave to be healthy before the next.",
+    "hint": "Ordered apply within a sync.",
+    "tags": ["composition"]
+  },
+  {
+    "q": "What are Argo CD resource hooks, and why is a database migration a PreSync hook?",
+    "a": "Hooks are resources (usually Jobs) annotated to run at a sync phase: PreSync, Sync, PostSync, or SyncFail. A DB migration is PreSync because the schema must change before the new app version rolls out; if the PreSync Job fails, the sync halts, so a broken migration doesn't take the app down.",
+    "hint": "PreSync/Sync/PostSync/SyncFail.",
+    "tags": ["composition"]
+  },
+  {
+    "q": "What does an AppProject restrict, and what does that prevent?",
+    "a": "It limits what its Applications may do: allowed source repos, allowed destinations (clusters/namespaces), and allowed resource kinds (incl. cluster-scoped). It's a blast-radius limiter — a bad or malicious app in one project can't deploy to another team's namespace or create cluster-admin resources.",
+    "hint": "Repos, destinations, kinds.",
+    "tags": ["security"]
+  },
+  {
+    "q": "How do AppProjects and Argo RBAC differ?",
+    "a": "An AppProject limits what an Application may deploy; RBAC limits what a person (or token), synced via SSO, may do in the Argo UI/API. Different axes for different actors — a user may have permission to sync an app while the AppProject still forbids that app from deploying outside its namespaces. You want both.",
+    "hint": "What an app can deploy vs what a person can do.",
+    "tags": ["security"]
+  },
+  {
+    "q": "Why can't you commit a normal Kubernetes Secret to Git, and how is it solved?",
+    "a": "A Secret is only base64-encoded, not encrypted, so committing it exposes the value. Solutions keep the usable secret out of Git: Sealed Secrets (commit ciphertext, an in-cluster controller decrypts), External Secrets Operator (commit a reference, fetch from Vault/cloud at runtime), or SOPS (encrypt files with KMS/age, decrypt at render).",
+    "hint": "Git holds ciphertext or a reference.",
+    "tags": ["security"]
+  },
+  {
+    "q": "What do selfHeal and prune do, and which is the footgun?",
+    "a": "selfHeal reverts live drift back to Git; prune deletes live resources removed from Git. Prune is the footgun: a wrong path or an ApplicationSet generator returning nothing can look like 'everything was removed' and delete resources from the cluster. Guard it with PR review, PruneLast, and care around empty renders.",
+    "hint": "Revert drift vs delete removed.",
+    "tags": ["production"]
+  },
+  {
+    "q": "How do Argo CD and Argo Rollouts divide responsibility?",
+    "a": "Argo CD keeps the cluster matching Git (what's deployed). Argo Rollouts replaces a Deployment with a Rollout supporting canary/blue-green plus automated analysis and rollback (how safely it ramps). When the Git change is a new image, CD applies it and the Rollout ramps it gradually.",
+    "hint": "What's deployed vs how it ramps.",
+    "tags": ["production"]
+  },
+  {
+    "q": "How does an Argo Rollouts canary work?",
+    "a": "It shifts traffic to the new version in steps (e.g. 5% → 25% → 50% → 100%), running an AnalysisRun between steps that queries metrics (error rate, latency from Prometheus). If a metric breaches its threshold, it automatically rolls back to the stable version.",
+    "hint": "Step traffic, analyze, auto-rollback.",
+    "tags": ["production"]
+  },
+  {
+    "q": "An Application is Synced but Degraded — Argo problem or app problem, and where do you debug?",
+    "a": "An app problem. Synced means the cluster matches Git, so Argo did its job; Degraded means the deployed workload itself is failing (crashing image, failing probe). Debug it like any workload with oc logs / oc describe — exactly as in the OpenShift troubleshooting lesson — not in Argo.",
+    "hint": "Sync OK → look at the workload.",
+    "tags": ["production", "troubleshooting"]
+  },
+  {
+    "q": "Which Argo CD commands do you reach for to diagnose and roll back?",
+    "a": "argocd app get (sync + health + resource tree — start here), argocd app diff (exact difference from Git), argocd app history (past synced revisions), and argocd app rollback <id> (redeploy a previous good revision). Split sync issues (Argo/Git/render) from health issues (the app).",
+    "hint": "get / diff / history / rollback.",
+    "tags": ["troubleshooting"]
+  }
+]

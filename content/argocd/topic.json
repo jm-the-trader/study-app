@@ -1,0 +1,8 @@
+{
+  "id": "argocd",
+  "title": "Argo CD",
+  "emoji": "🐙",
+  "blurb": "GitOps continuous delivery for Kubernetes: the pull-based reconciliation model, Applications and sync/health status, Helm/Kustomize and ApplicationSets, app-of-apps with sync waves and hooks, AppProjects/RBAC and the secrets problem, plus progressive delivery and troubleshooting.",
+  "accent": "#fb923c",
+  "order": 6.6
+}

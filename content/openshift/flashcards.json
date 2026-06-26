@@ -166,5 +166,89 @@
     "a": "Voluntary disruptions like node drains and cluster upgrades. It keeps a minimum number of replicas available so a rolling node update or upgrade can't evict every Pod of an app at once.",
     "hint": "Voluntary disruptions.",
     "tags": ["health", "operations"]
+  },
+  {
+    "q": "Walk through the pipeline an API request passes inside the API server.",
+    "a": "Authentication (who are you?) → Authorization (may you do this? — RBAC) → Admission (mutating then validating webhooks; an SCC sets the Pod's UID here) → persist desired state to etcd. Controllers/operators/scheduler then watch etcd and reconcile reality to match.",
+    "hint": "authn → authz → admission → etcd → reconcile.",
+    "tags": ["architecture"]
+  },
+  {
+    "q": "A request is rejected with 403 vs 'Pod must run as non-root.' Which stage of the API pipeline produced each?",
+    "a": "The 403 comes from Authorization (RBAC) — you're not permitted to do the action. 'Must run as non-root' comes from Admission, where an SCC validates the Pod's security context. Knowing the stage tells you whether to fix a RoleBinding or the Pod/image.",
+    "hint": "authz vs admission.",
+    "tags": ["architecture", "security"]
+  },
+  {
+    "q": "Taints/tolerations vs node affinity/nodeSelector — which direction does each work?",
+    "a": "A taint is the node repelling Pods (they need a matching toleration to land there). Affinity/nodeSelector is the Pod attracting itself to certain nodes. To reserve special nodes (e.g. GPU), combine both: taint the nodes AND give the right Pods a toleration plus a nodeSelector.",
+    "hint": "Node repels vs Pod attracts.",
+    "tags": ["scheduling"]
+  },
+  {
+    "q": "Your three replicas keep landing on the same node. Which scheduling control fixes it?",
+    "a": "Pod anti-affinity or topology spread constraints, which tell the scheduler to place replicas on different nodes/zones so a single node or zone failure can't take all of them down.",
+    "hint": "Keep replicas in different failure domains.",
+    "tags": ["scheduling"]
+  },
+  {
+    "q": "Name the four autoscalers and what each scales.",
+    "a": "HPA scales the number of Pod replicas on metrics. VPA right-sizes each Pod's CPU/memory requests. Cluster Autoscaler adds/removes nodes when Pods can't schedule or nodes sit idle. Machine Autoscaler links the Cluster Autoscaler to a specific MachineSet to create/destroy the actual VMs.",
+    "hint": "Pods: HPA/VPA. Nodes: Cluster/Machine.",
+    "tags": ["scaling"]
+  },
+  {
+    "q": "The HPA wants 20 replicas but new Pods sit Pending. What's missing?",
+    "a": "Node capacity. The HPA scales replicas but cannot create nodes. The Cluster Autoscaler (driving a MachineSet via the Machine Autoscaler) adds nodes for the Pending Pods to land on. You typically need both working together.",
+    "hint": "HPA can't make nodes.",
+    "tags": ["scaling"]
+  },
+  {
+    "q": "Why does 'everything is a CR' make cluster-wide GitOps possible?",
+    "a": "OpenShift exposes its own configuration as custom resources (OAuth, Proxy, IngressController, MachineConfig, OLM Subscriptions, quotas, SCC bindings…). If it's a CR you can commit it to Git and have Argo CD reconcile it — so the whole platform, not just apps, becomes versioned, reviewable, and rebuildable.",
+    "hint": "Config is just API objects.",
+    "tags": ["gitops"]
+  },
+  {
+    "q": "With GitOps self-heal on, what happens when someone hand-edits a live resource, and why is that good?",
+    "a": "Argo CD detects the drift from Git and reverts the live resource back to the committed state. It's good because the cluster can't silently diverge from its source of truth — every real change must go through a reviewed commit, so git revert is your rollback and git log your audit trail.",
+    "hint": "Drift gets undone.",
+    "tags": ["gitops"]
+  },
+  {
+    "q": "What is the app-of-apps pattern, and what does RHACM add on top?",
+    "a": "App-of-apps is one root Argo CD Application that points at a Git folder of other Applications, so applying it once bootstraps an entire cluster's config and workloads. RHACM scales the idea to many clusters with a hub-and-spoke model and Policies that enforce/report compliance across the fleet.",
+    "hint": "One repo bootstraps a cluster; RHACM does fleets.",
+    "tags": ["gitops"]
+  },
+  {
+    "q": "What is the architectural trick that makes Loki cheap, and the trade-off?",
+    "a": "Loki indexes only labels (namespace/pod/container), not the full log text, and stores raw log chunks in cheap object storage. The small index makes it inexpensive at scale; the trade-off is that searches not anchored by a label must scan more data, so you filter by label first.",
+    "hint": "Index labels, not text.",
+    "tags": ["logging"]
+  },
+  {
+    "q": "Describe the OpenShift logging pipeline and its three log types.",
+    "a": "Vector (a per-node DaemonSet) collects and labels container stdout → a ClusterLogForwarder routes it → LokiStack stores it → you query with LogQL in the console. Logs are split into application, infrastructure, and audit tenants so RBAC controls who can read which.",
+    "hint": "Vector → LokiStack → LogQL.",
+    "tags": ["logging"]
+  },
+  {
+    "q": "Why should a LogQL query start with a label selector?",
+    "a": "Because Loki indexes labels, the selector {namespace=...} uses the small, fast index to narrow to the right streams before any line filtering. A bare text search with no labels forces Loki to scan everything — slow and expensive, the exact workload its design avoids.",
+    "hint": "Narrow by label, then filter lines.",
+    "tags": ["logging"]
+  },
+  {
+    "q": "How does a service mesh provide mTLS and retries without changing app code?",
+    "a": "It injects an Envoy sidecar proxy next to every Pod, and all traffic flows through that proxy. The mesh control plane configures every proxy centrally, so mTLS between services, retries/timeouts, traffic routing, and metrics happen in the proxy layer — the application is unaware.",
+    "hint": "Envoy sidecar intercepts all traffic.",
+    "tags": ["mesh"]
+  },
+  {
+    "q": "What can Knative (OpenShift Serverless) do that a Deployment + HPA cannot, and the trade-off?",
+    "a": "Knative Serving scales on request concurrency and all the way to zero when idle (an HPA holds a minimum replica count). Great for spiky/event-driven workloads where idle Pods are waste. The trade-off is cold starts: the first request after scaling to zero waits for a Pod to spin up.",
+    "hint": "Scale to zero vs cold starts.",
+    "tags": ["serverless"]
   }
 ]
