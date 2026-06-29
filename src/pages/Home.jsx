@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { TOPICS, ALL_FLASHCARDS } from '../content/loadContent.js'
+import { TOPICS, ALL_FLASHCARDS, ALL_INTERVIEW } from '../content/loadContent.js'
 import { topicLessonProgress, getCardStats } from '../lib/progress.js'
 import { encouragement } from '../lib/encouragement.js'
 
@@ -64,6 +64,14 @@ export default function Home() {
           >
             🃏 Study all flashcards ({ALL_FLASHCARDS.length})
           </Link>
+          {ALL_INTERVIEW.length > 0 && (
+            <Link
+              to="/interview"
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-medium text-slate-200 hover:bg-white/10"
+            >
+              🎤 Interview prep ({ALL_INTERVIEW.length})
+            </Link>
+          )}
           <span className="self-center text-sm text-slate-500">
             {TOPICS.length} topics · {totalLessons} lessons
           </span>

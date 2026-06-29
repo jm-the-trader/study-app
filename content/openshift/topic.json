@@ -2,7 +2,7 @@
   "id": "openshift",
   "title": "OpenShift",
   "emoji": "🎩",
-  "blurb": "Red Hat's enterprise Kubernetes, in depth: cluster architecture and the API request flow, SCCs and the arbitrary-UID contract, S2I builds, Routes and the router, storage, scheduling & autoscaling, GitOps cluster management, logging with Loki, service mesh, and the oc troubleshooting toolkit.",
+  "blurb": "Red Hat's enterprise Kubernetes, in depth: cluster architecture and the API request flow, SCCs and the arbitrary-UID contract, S2I builds, a deep networking track (the pod network model, CNI, OpenShift SDN vs OVN-Kubernetes, Routes, and NetworkPolicy), storage, scheduling & autoscaling, GitOps cluster management, logging with Loki, service mesh, and the oc troubleshooting toolkit.",
   "accent": "#f87171",
   "order": 6.1
 }

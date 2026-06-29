@@ -17,7 +17,8 @@ content/<topic-id>/
 │   ├── 01-intro.md
 │   ├── 02-….md
 │   └── …
-└── flashcards.json     (optional)  array of cards
+├── flashcards.json     (optional)  array of cards
+└── interview.json      (optional)  array of mock-interview Q&A
 ```
 
 - `<topic-id>` is the folder name — lowercase, kebab-case (e.g. `linux-networking`). It becomes the URL slug.
@@ -113,7 +114,40 @@ An array of card objects:
 
 ---
 
-## 5. Accuracy obligations (read this twice)
+## 5. Interview questions (`interview.json`)
+
+A topic can also ship a **mock-interview segment** — questions you'd be asked out loud, each with a model answer. It renders as a calm, grouped accordion (read the question, answer aloud, reveal the model answer and compare), separate from the graded flashcard deck.
+
+An array of question objects:
+
+```json
+[
+  {
+    "category": "Fundamentals & CNI",
+    "q": "Walk me through what happens when a pod gets its IP.",
+    "a": "A complete spoken-style answer. **Markdown is supported** — use bold, bullet lists, tables, and fenced ```code``` blocks for richer answers.",
+    "tags": ["cni"]
+  }
+]
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `q` | yes | The interview question. |
+| `a` | yes | The model answer. **Rendered as Markdown** (GFM), so lists/tables/code work. |
+| `category` | recommended | Groups questions into sections (e.g. "Troubleshooting"). Defaults to "General". |
+| `tags` | optional | Free-form labels shown as chips. |
+
+### Interview quality bar
+
+- **Answer like a strong candidate would speak** — structured, complete, and explaining the *why*, not just the *what*. It's fine (encouraged) to end an answer with what makes it a good answer.
+- **Longer and richer than a flashcard.** Flashcards test one recall; interview answers demonstrate reasoning. Use Markdown structure to keep them readable.
+- **Group with `category`** so the page reads like an interview outline (Fundamentals → Architecture → Troubleshooting…).
+- Aim for **~10–18 questions per topic**, covering the concepts a real interviewer would probe.
+
+---
+
+## 6. Accuracy obligations (read this twice)
 
 This is teaching material, so correctness is paramount:
 
@@ -124,13 +158,14 @@ This is teaching material, so correctness is paramount:
 
 ---
 
-## 6. Pre-publish checklist
+## 7. Pre-publish checklist
 
 - [ ] `topic.json` is valid JSON with `id` matching the folder name.
 - [ ] Lessons are named `NN-slug.md`, each with a single top `# H1`.
 - [ ] Each lesson has a hook, progressive content, **Check yourself**, and **Key takeaways**.
 - [ ] Code blocks are fenced with a language and are correct/runnable.
 - [ ] `flashcards.json` is valid JSON; cards are one-idea, self-contained, accurate.
+- [ ] `interview.json` (if present) is valid JSON; answers are structured, accurate, and grouped by `category`.
 - [ ] Tone matches the kind tutor voice; nothing is shaming or snarky.
 - [ ] All facts verified; no fabricated sources or commands.
 - [ ] Ran `npm run dev` and confirmed the topic, every lesson, and the cards render.
