@@ -1,0 +1,122 @@
+[
+  {
+    "q": "What network contract must every OpenShift/Kubernetes cluster satisfy?",
+    "a": "Every pod gets its own unique, cluster-wide IP; pods can reach any other pod on any node directly with no NAT; and node agents (kubelet) can reach all pods on their node. The cluster is meant to look like one flat network of pods.",
+    "tags": ["model"]
+  },
+  {
+    "q": "Why is a network plugin needed at all — doesn't Kubernetes do pod networking itself?",
+    "a": "No. Kubernetes defines the network model (the contract) but deliberately delegates the implementation to a pluggable component via CNI. That's why OpenShift can ship more than one engine (OpenShift SDN, OVN-Kubernetes).",
+    "tags": ["model", "cni"]
+  },
+  {
+    "q": "What is an overlay network, and why does OpenShift use one?",
+    "a": "An overlay encapsulates a pod-to-pod packet inside an ordinary node-to-node packet so the physical network — which only routes between node IPs — can carry it; the far node decapsulates and delivers it. It's how a flat pod network rides a network that's never heard of pod IPs.",
+    "tags": ["model"]
+  },
+  {
+    "q": "Name OpenShift's three IP ranges and what each is for.",
+    "a": "Cluster (pod) network — IPs for pods (e.g. 10.128.0.0/14); Service network — stable virtual IPs for Services (e.g. 172.30.0.0/16); Machine (node) network — the real NICs of the nodes. Different owners, different lifetimes.",
+    "tags": ["model"]
+  },
+  {
+    "q": "What is CNI?",
+    "a": "The Container Network Interface — a small CNCF standard. A CNI plugin is an executable the container runtime calls with ADD/DEL (plus CHECK/VERSION) to set up or tear down one pod's network namespace: create interfaces, assign an IP via IPAM, install routes.",
+    "tags": ["cni"]
+  },
+  {
+    "q": "On OpenShift, what chain of components wires up a new pod's network?",
+    "a": "The kubelet asks the runtime (CRI-O) to create the pod sandbox; CRI-O invokes the configured CNI plugin with ADD; the plugin creates a veth pair, moves one end into the pod namespace as eth0, assigns an IP from the cluster network (IPAM), and adds routes.",
+    "tags": ["cni"]
+  },
+  {
+    "q": "A pod is stuck in ContainerCreating with a 'failed to set up sandbox network' error. Where do you look?",
+    "a": "At the network plugin, not your app. That error means the CNI plugin couldn't assign an IP or program the network — investigate the plugin's pods/logs (e.g. in openshift-ovn-kubernetes).",
+    "tags": ["cni", "troubleshooting"]
+  },
+  {
+    "q": "What does the Cluster Network Operator (CNO) do?",
+    "a": "It installs, configures, and continuously reconciles the cluster's networking components based on the Network custom resources. The networkType field (OVNKubernetes or OpenShiftSDN) selects the engine; it's chosen at install and changed only via a migration.",
+    "tags": ["cni", "operators"]
+  },
+  {
+    "q": "What is OpenShift SDN built on, and how does it cross between nodes?",
+    "a": "Open vSwitch (OVS) on every node, driven by flow rules. Pod-to-pod traffic between nodes uses a VXLAN overlay (UDP 4789): OVS encapsulates the packet node-to-node and decapsulates it on the far side.",
+    "tags": ["sdn"]
+  },
+  {
+    "q": "What are OpenShift SDN's three modes?",
+    "a": "network-policy (default — enforces Kubernetes NetworkPolicy), multitenant (each project gets a unique VNID and only same-VNID pods can talk; VNID 0 is privileged), and subnet (flat, no isolation).",
+    "tags": ["sdn"]
+  },
+  {
+    "q": "In OpenShift SDN multitenant mode, what is special about VNID 0?",
+    "a": "VNID 0 (the default project) is privileged: it can reach all projects and all projects can reach it. That's how cluster-wide infrastructure stays reachable while other projects are isolated from each other.",
+    "tags": ["sdn"]
+  },
+  {
+    "q": "What is OVN-Kubernetes, and what is OVN?",
+    "a": "OVN-Kubernetes is OpenShift's default network plugin. OVN (Open Virtual Network), a sub-project of Open vSwitch, lets you declare a logical network — logical switches, routers, ACLs, load balancers, NAT — which OVN compiles down to real OVS/OpenFlow rules on each node.",
+    "tags": ["ovn"]
+  },
+  {
+    "q": "Walk the OVN control-plane pipeline from desired state to packets moving.",
+    "a": "Northbound DB holds the desired logical network (switches/routers/ACLs) → ovn-northd compiles it into logical flows in the Southbound DB → ovn-controller on each node reads the SB DB and programs OpenFlow rules into the local OVS. OpenShift's ovnkube components write K8s objects into the NB DB.",
+    "tags": ["ovn"]
+  },
+  {
+    "q": "A NetworkPolicy is enforced everywhere except one node. Which OVN component do you suspect?",
+    "a": "That node's ovn-controller (or its local OVS). If desired state is right cluster-wide but a single node misbehaves, the per-node controller that programs OpenFlow is the likely culprit — not the NB DB / control plane.",
+    "tags": ["ovn", "troubleshooting"]
+  },
+  {
+    "q": "Which overlay protocol does OVN-Kubernetes use, and how does it differ from OpenShift SDN's?",
+    "a": "OVN-Kubernetes uses Geneve (UDP 6081); OpenShift SDN uses VXLAN (UDP 4789). Geneve adds extensible TLV option fields, so the overlay can carry extra metadata — more flexible than VXLAN's fixed header.",
+    "tags": ["ovn", "comparison"]
+  },
+  {
+    "q": "How does OVN-Kubernetes handle Service load balancing differently from a typical kube-proxy cluster?",
+    "a": "It implements Services with OVN load balancers in the data plane, so east-west Service load balancing is done by OVN itself rather than a separate iptables/IPVS kube-proxy. One engine owns connectivity, policy, and service LB.",
+    "tags": ["ovn", "services"]
+  },
+  {
+    "q": "Why did OpenShift move from OpenShift SDN to OVN-Kubernetes?",
+    "a": "OVN-Kubernetes supports things SDN structurally can't: IPv6/dual-stack, egress IP / egress firewall / egress router, IPsec encryption of pod traffic, hardware offload to SmartNICs/DPUs, and hybrid Windows+Linux networking — with one consistent policy model.",
+    "tags": ["comparison"]
+  },
+  {
+    "q": "What's the OpenShift SDN → OVN-Kubernetes status timeline?",
+    "a": "OVN-Kubernetes has been the default for new installs since OpenShift 4.11; OpenShift SDN was deprecated in 4.14 and removed in 4.17. A cluster on SDN must migrate to OVN-Kubernetes before upgrading past 4.16. (Confirm specifics for your version.)",
+    "tags": ["comparison"]
+  },
+  {
+    "q": "Your cluster is on OpenShift SDN and you want to upgrade to 4.17+. What must happen first?",
+    "a": "You must migrate to OVN-Kubernetes, because SDN was removed in 4.17 — an un-migrated cluster cannot upgrade past 4.16. The migration is an in-place change of networkType orchestrated by the Cluster Network Operator.",
+    "tags": ["comparison", "migration"]
+  },
+  {
+    "q": "What is a Service, and what does ClusterIP give you?",
+    "a": "A Service is a stable virtual IP plus label-based load balancing over a set of pods. ClusterIP (the default) is an internal-only VIP for east-west traffic — clients hit the stable IP and the plugin spreads connections across healthy pods despite restarts.",
+    "tags": ["services"]
+  },
+  {
+    "q": "What is an OpenShift Route, and how does it relate to Ingress?",
+    "a": "A Route is OpenShift's native resource for exposing a Service externally via the HAProxy-based OpenShift router. It predates Ingress; on OpenShift the Ingress Operator implements Ingress objects by creating Routes under the hood, so Routes are the lower-level primitive.",
+    "tags": ["routes"]
+  },
+  {
+    "q": "What are the three Route TLS termination modes?",
+    "a": "edge — TLS terminates at the router, plain HTTP to the pod; passthrough — router doesn't decrypt, the pod terminates TLS (routed by SNI); reencrypt — router terminates then re-encrypts to the pod (encrypted on both legs).",
+    "tags": ["routes"]
+  },
+  {
+    "q": "What is the counter-intuitive default behavior of NetworkPolicy?",
+    "a": "A pod is unrestricted until at least one policy selects it. The moment any policy selects it for a direction (ingress/egress), everything not explicitly allowed in that direction is denied. So 'default allow' flips to 'default deny' per pod, per direction.",
+    "tags": ["networkpolicy"]
+  },
+  {
+    "q": "How is NetworkPolicy enforced, and how do you restrict traffic leaving the cluster?",
+    "a": "The network plugin enforces it — on OVN-Kubernetes each policy compiles into OVN ACLs (SDN used OVS flow rules). To restrict egress to external IPs/domains, use OpenShift's separate EgressFirewall resource (a plugin feature, not core Kubernetes).",
+    "tags": ["networkpolicy"]
+  }
+]

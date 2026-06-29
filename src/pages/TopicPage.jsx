@@ -36,14 +36,24 @@ export default function TopicPage() {
           <h1 className="text-2xl font-bold text-white">{topic.title}</h1>
           <p className="mt-1 text-slate-400">{topic.blurb}</p>
         </div>
-        {topic.flashcards.length > 0 && (
-          <Link
-            to={`/flashcards/${topic.id}`}
-            className="self-center rounded-xl bg-brand px-4 py-2 font-medium text-ink hover:bg-brand-soft"
-          >
-            🃏 {cards.due} due · study
-          </Link>
-        )}
+        <div className="flex flex-wrap items-center gap-2 self-center">
+          {topic.flashcards.length > 0 && (
+            <Link
+              to={`/flashcards/${topic.id}`}
+              className="rounded-xl bg-brand px-4 py-2 font-medium text-ink hover:bg-brand-soft"
+            >
+              🃏 {cards.due} due · study
+            </Link>
+          )}
+          {topic.interview.length > 0 && (
+            <Link
+              to={`/interview/${topic.id}`}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-medium text-slate-200 hover:bg-white/10"
+            >
+              🎤 {topic.interview.length} interview Q&A
+            </Link>
+          )}
+        </div>
       </header>
 
       <section>

@@ -1,0 +1,8 @@
+{
+  "id": "openshift",
+  "title": "OpenShift Networking",
+  "emoji": "🔴",
+  "blurb": "How pods actually talk: the CNI model, OpenShift SDN vs OVN-Kubernetes, Services & Routes, and NetworkPolicy — and why the OVN migration matters.",
+  "accent": "#ee0000",
+  "order": 7
+}

@@ -4,12 +4,14 @@
 //   topic.json          metadata { id, title, emoji, blurb, order, accent? }
 //   lessons/*.md        Markdown lessons (ordered by their NN- filename prefix)
 //   flashcards.json     array of { q, a, hint?, tags? }
+//   interview.json      array of { q, a, category?, tags? }  (mock interview Q&A)
 //
 // To add a subject, drop a new folder in /content — no app code changes needed.
 // See content/CONTENT_GUIDE.md for the authoring contract.
 
 const topicMetaFiles = import.meta.glob('../../content/*/topic.json', { eager: true })
 const flashcardFiles = import.meta.glob('../../content/*/flashcards.json', { eager: true })
+const interviewFiles = import.meta.glob('../../content/*/interview.json', { eager: true })
 const lessonFiles = import.meta.glob('../../content/*/lessons/*.md', {
   eager: true,
   query: '?raw',
@@ -64,6 +66,7 @@ function buildTopics() {
       order: typeof meta.order === 'number' ? meta.order : 100,
       lessons: [],
       flashcards: [],
+      interview: [],
     }
   }
 
@@ -93,7 +96,20 @@ function buildTopics() {
     topics[id].flashcards = cards
   }
 
-  // 4. Sort lessons within each topic, then sort topics for display.
+  // 4. Attach interview questions (mock-interview Q&A — a read/reveal segment).
+  for (const [path, mod] of Object.entries(interviewFiles)) {
+    const id = topicIdFromPath(path)
+    if (!id || !topics[id]) continue
+    const questions = (mod.default || mod || []).map((q, i) => ({
+      id: `${id}:iv:${i}`,
+      topicId: id,
+      category: q.category || 'General',
+      ...q,
+    }))
+    topics[id].interview = questions
+  }
+
+  // 5. Sort lessons within each topic, then sort topics for display.
   const list = Object.values(topics)
   for (const t of list) {
     t.lessons.sort((a, b) => a.order - b.order)
@@ -123,3 +139,6 @@ export function getLesson(topicId, slug) {
 
 // Every flashcard across every topic — used for "study everything" mode.
 export const ALL_FLASHCARDS = TOPICS.flatMap((t) => t.flashcards)
+
+// Every interview question across every topic — used for the all-topics drill.
+export const ALL_INTERVIEW = TOPICS.flatMap((t) => t.interview)

@@ -4,6 +4,7 @@ import Home from './pages/Home.jsx'
 import TopicPage from './pages/TopicPage.jsx'
 import LessonPage from './pages/LessonPage.jsx'
 import FlashcardsPage from './pages/FlashcardsPage.jsx'
+import InterviewPage from './pages/InterviewPage.jsx'
 import { getStreak, hydrate, subscribeProgress } from './lib/progress.js'
 import { lockApp } from './auth/PasswordGate.jsx'
 
@@ -39,6 +40,14 @@ function Header() {
           >
             Flashcards
           </Link>
+          <Link
+            to="/interview"
+            className={`rounded-lg px-3 py-1.5 transition hover:bg-white/5 ${
+              pathname.startsWith('/interview') ? 'text-white' : 'text-slate-400'
+            }`}
+          >
+            Interview
+          </Link>
           {streak > 0 && (
             <span
               title="Daily study streak"
@@ -73,6 +82,8 @@ export default function App() {
           <Route path="/topic/:topicId/lesson/:slug" element={<LessonPage />} />
           <Route path="/flashcards" element={<FlashcardsPage />} />
           <Route path="/flashcards/:topicId" element={<FlashcardsPage />} />
+          <Route path="/interview" element={<InterviewPage />} />
+          <Route path="/interview/:topicId" element={<InterviewPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
